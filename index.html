@@ -1,0 +1,3006 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Acdelco — Grupo Jorlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0B1642;
+    --navy-2:#142255;
+    --navy-3:#1E2E6B;
+    --indigo:#4F5FDE;
+    --indigo-light:#EDEFFC;
+    --gold:#C9972E;
+    --gold-light:#FBF3E2;
+    --teal:#0E9488;
+    --teal-light:#E4F5F3;
+    --bg:#F4F5FA;
+    --card:#FFFFFF;
+    --text:#171B33;
+    --text-muted:#676E88;
+    --border:#E6E8F1;
+    --green:#15803D;
+    --red:#C0392B;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(16,20,50,.04), 0 8px 24px -12px rgba(16,20,50,.12);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:#C6CAE0;border-radius:8px;}
+
+  /* ---------- Upload screen ---------- */
+  #tela-upload{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 15% 10%, #16215A 0%, var(--navy) 45%, #060A1E 100%);
+    padding:24px;
+  }
+  .upload-box{
+    width:100%;max-width:620px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+    border-radius:20px;padding:44px;backdrop-filter:blur(6px);
+  }
+  .upload-eyebrow{color:var(--gold);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin:0 0 10px;}
+  .upload-title{color:#fff;font-size:28px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em;}
+  .upload-sub{color:#AEB4D6;font-size:14.5px;line-height:1.55;margin:0 0 28px;}
+  .dropzone{
+    border:1.5px dashed rgba(255,255,255,.28);border-radius:16px;padding:36px 24px;text-align:center;
+    cursor:pointer;transition:.2s;background:rgba(255,255,255,.02);
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--gold);background:rgba(201,151,46,.08);}
+  .dropzone svg{width:34px;height:34px;color:var(--gold);margin-bottom:12px;}
+  .dropzone-title{color:#fff;font-weight:700;font-size:15px;margin-bottom:4px;}
+  .dropzone-sub{color:#9198C2;font-size:13px;}
+  .upload-specs{margin-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .spec-chip{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;}
+  .spec-chip .n{color:var(--gold);font-weight:800;font-size:12px;letter-spacing:.05em;}
+  .spec-chip .d{color:#C7CBE8;font-size:11.5px;margin-top:3px;line-height:1.4;}
+  #file-input{display:none;}
+  .upload-status{margin-top:18px;color:#DADFFF;font-size:13px;display:none;align-items:center;gap:8px;}
+  .upload-error{margin-top:14px;color:#FFB4A8;font-size:13px;background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.35);padding:10px 14px;border-radius:10px;display:none;}
+  .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--gold);animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Dashboard ---------- */
+  #tela-dashboard{display:none;}
+  .topbar{
+    background:linear-gradient(115deg, var(--navy) 0%, var(--navy-3) 100%);
+    color:#fff;padding:20px 28px;position:sticky;top:0;z-index:30;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    box-shadow:0 4px 18px rgba(8,12,40,.18);
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .logo-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#A97918);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--navy);font-size:15px;flex-shrink:0;}
+  .topbar-title{font-size:17px;font-weight:800;letter-spacing:-.01em;}
+  .topbar-sub{font-size:12px;color:#AEB4D6;margin-top:1px;}
+  .topbar-update-badge{
+    display:flex;align-items:center;gap:6px;background:rgba(201,151,46,.14);border:1px solid rgba(201,151,46,.4);
+    border-radius:999px;padding:6px 13px;margin-left:8px;color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;
+  }
+  .topbar-update-badge svg{width:14px;height:14px;flex-shrink:0;}
+  .topbar-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{
+    border:none;border-radius:10px;padding:10px 16px;font-family:inherit;font-weight:600;font-size:13px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.15s;white-space:nowrap;
+  }
+  .btn svg{width:15px;height:15px;}
+  .btn-gold{background:var(--gold);color:var(--navy);}
+  .btn-gold:hover{background:#DBA93C;}
+  .btn-indigo{background:var(--indigo);color:#fff;}
+  .btn-indigo:hover{background:#3F4ECB;}
+  .btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.16);}
+  .btn-ghost:hover{background:rgba(255,255,255,.15);}
+  .btn-outline{background:#fff;color:var(--navy);border:1px solid var(--border);}
+  .btn-mini-export{padding:6px 11px;font-size:11.5px;}
+  .curva-export-row{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .curva-export-label{font-size:12px;color:var(--text-muted);font-weight:600;}
+  .curva-export-row select{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit;font-size:12.5px;color:var(--text);background:#fff;}
+  .btn-outline:hover{border-color:var(--indigo);color:var(--indigo);}
+
+  .wrap{max-width:1360px;margin:0 auto;padding:24px 28px 60px;}
+
+  /* Filters */
+  .filters-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .filters-row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .filter-group{display:flex;flex-direction:column;gap:8px;}
+  .filter-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+  .pill-row{display:flex;flex-wrap:wrap;gap:6px;max-width:560px;}
+  .pill{
+    border:1px solid var(--border);background:#fff;border-radius:999px;padding:6px 13px;font-size:12.5px;
+    font-weight:600;color:var(--text-muted);cursor:pointer;transition:.13s;user-select:none;
+  }
+  .pill:hover{border-color:var(--indigo);color:var(--indigo);}
+  .pill.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .pill.active.mod-chevrolet{background:#1D4E9B;border-color:#1D4E9B;}
+  .pill.active.mod-multimarca{background:var(--gold);border-color:var(--gold);color:var(--navy);}
+  .pill.active.mod-quimicos{background:var(--teal);border-color:var(--teal);}
+  .pill.active.mod-outros{background:#6B7280;border-color:#6B7280;}
+  .search-input{
+    border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-family:inherit;font-size:13px;
+    width:230px;outline:none;
+  }
+  .search-input:focus{border-color:var(--indigo);}
+  .filters-clear{align-self:flex-end;margin-left:auto;}
+  .link-btn{background:none;border:none;color:var(--indigo);font-size:12.5px;font-weight:600;cursor:pointer;padding:6px 4px;}
+  .link-btn:hover{text-decoration:underline;}
+
+  /* KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .kpi-card::before{content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:var(--indigo);}
+  .kpi-card.gold::before{background:var(--gold);}
+  .kpi-card.teal::before{background:var(--teal);}
+  .kpi-card.navy::before{background:var(--navy);}
+  .kpi-label{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+  .kpi-value{font-size:25px;font-weight:800;letter-spacing:-.01em;}
+  .kpi-delta{font-size:12px;font-weight:600;margin-top:6px;display:flex;align-items:center;gap:4px;}
+  .kpi-delta.up{color:var(--green);}
+  .kpi-delta.down{color:var(--red);}
+  .kpi-delta.flat{color:var(--text-muted);}
+
+  /* Projeção de fechamento */
+  .proj-card{
+    background:linear-gradient(120deg, var(--navy) 0%, var(--navy-3) 100%);
+    border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;color:#fff;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .proj-card::before{
+    content:"";position:absolute;top:-40%;right:-8%;width:320px;height:320px;border-radius:50%;
+    background:radial-gradient(circle, rgba(201,151,46,.25) 0%, transparent 70%);
+  }
+  .proj-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;position:relative;z-index:1;}
+  .proj-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+  .proj-title{font-size:16.5px;font-weight:800;}
+  .proj-total{text-align:right;}
+  .proj-total-label{font-size:11px;color:#AEB4D6;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+  .proj-total-value{font-size:30px;font-weight:900;color:var(--gold);letter-spacing:-.01em;}
+  .proj-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px;position:relative;z-index:1;}
+  .proj-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;}
+  .proj-item-label{font-size:10.5px;color:#AEB4D6;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+  .proj-item-value{font-size:16.5px;font-weight:800;}
+  .proj-bar-track{height:7px;border-radius:6px;background:rgba(255,255,255,.12);margin-top:18px;overflow:hidden;position:relative;z-index:1;}
+  .proj-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--gold),#E8C05F);width:0%;transition:width .4s;}
+  .proj-nota{margin-top:12px;font-size:11.5px;color:#9AA1C7;line-height:1.5;position:relative;z-index:1;}
+  .proj-mod-breakdown{display:flex;gap:14px;margin-top:18px;position:relative;z-index:1;flex-wrap:wrap;}
+  .proj-mod-item{flex:1;min-width:170px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;}
+  .proj-mod-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+  .proj-mod-nome{font-size:11px;color:#AEB4D6;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .proj-mod-valor{font-size:16px;font-weight:800;color:#fff;margin-top:4px;}
+  .proj-mod-sub{font-size:11px;color:#9AA1C7;}
+
+  /* Tabs */
+  .tabnav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:73px;z-index:29;}
+  .tabnav-inner{display:flex;gap:4px;padding:0 28px;}
+  .tab-btn{
+    background:none;border:none;border-bottom:2.5px solid transparent;padding:13px 16px 11px;
+    font-family:inherit;font-size:13.5px;font-weight:700;color:var(--text-muted);cursor:pointer;
+    display:flex;align-items:center;gap:7px;transition:.15s;
+  }
+  .tab-btn svg{width:16px;height:16px;}
+  .tab-btn:hover{color:var(--indigo);}
+  .tab-btn.active{color:var(--navy);border-bottom-color:var(--gold);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* Stock upload card */
+  .stock-upload-card{
+    background:linear-gradient(120deg, var(--navy) 0%, var(--navy-3) 100%);border-radius:var(--radius);
+    padding:32px;color:#fff;margin-bottom:20px;max-width:680px;
+  }
+  .stock-upload-eyebrow{color:var(--gold);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:8px;}
+  .stock-upload-title{font-size:21px;font-weight:800;margin-bottom:8px;}
+  .stock-upload-sub{color:#AEB4D6;font-size:13.5px;line-height:1.55;margin-bottom:20px;}
+  .dropzone-dark{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.02);}
+  .dropzone-dark:hover, .dropzone-dark.drag{border-color:var(--gold);background:rgba(201,151,46,.08);}
+  #stock-file-input{display:none;}
+  .stock-seg-warning{margin-top:16px;font-size:12.5px;color:#FFE1A8;background:rgba(201,151,46,.12);border:1px solid rgba(201,151,46,.3);padding:10px 14px;border-radius:10px;}
+
+  /* Panels */
+  .panel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+  .panel-title{font-size:14.5px;font-weight:800;letter-spacing:-.005em;}
+  .panel-badge{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--indigo-light);color:var(--indigo);}
+  .chart-box{position:relative;height:280px;}
+  .chart-box.tall{height:340px;}
+
+  .legend-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .legend-item{display:flex;align-items:center;gap:9px;font-size:12.5px;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .legend-item .lbl{flex:1;color:var(--text);font-weight:600;}
+  .legend-item .val{color:var(--text-muted);font-weight:700;font-variant-numeric:tabular-nums;}
+
+  /* Ranking table */
+  .rank-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .rank-table th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:0 10px 10px;font-weight:700;border-bottom:1px solid var(--border);}
+  .rank-table td{padding:10px;border-bottom:1px solid #F0F1F7;}
+  .rank-table tr:last-child td{border-bottom:none;}
+  .rank-table td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
+  .bar-cell{width:110px;}
+  .mini-bar-track{background:#EEF0F8;border-radius:6px;height:7px;overflow:hidden;}
+  .mini-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--indigo),#8B95F0);}
+  .th-sort{cursor:pointer;user-select:none;}
+  .th-sort:hover{color:var(--indigo);}
+  .compare-table{margin-top:4px;table-layout:fixed;width:100%;}
+  .compare-table th{padding:0 16px 10px 0;white-space:nowrap;}
+  .compare-table th:first-child{text-align:left;width:34%;}
+  .compare-table th:not(:first-child){text-align:right;}
+  .compare-table td{white-space:nowrap;padding:10px 16px 10px 0;}
+  .compare-table td:first-child{font-weight:700;color:var(--text);padding-left:10px;}
+  .compare-table td:not(:first-child){text-align:right;}
+  .compare-table th.col-consolidado, .compare-table td.col-consolidado{background:var(--indigo-light);border-radius:6px;padding-right:16px;}
+  .compare-table th.col-consolidado{color:var(--indigo);padding-right:16px;}
+
+  /* Detail table */
+  .table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .table-scroll{overflow:auto;max-height:520px;}
+  table.detail{width:100%;border-collapse:collapse;font-size:12.8px;min-width:900px;}
+  table.detail thead th{
+    position:sticky;top:0;background:var(--navy);color:#fff;text-align:left;padding:11px 12px;font-weight:700;
+    font-size:11px;letter-spacing:.04em;text-transform:uppercase;z-index:1;cursor:pointer;
+  }
+  table.detail thead th:hover{background:var(--navy-3);}
+  table.detail tbody td{padding:9px 12px;border-bottom:1px solid #EFF0F7;color:var(--text);white-space:nowrap;}
+  table.detail tbody tr:hover{background:#FAFAFE;}
+  table.detail td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .badge-modalidade{padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;display:inline-block;}
+  .badge-chevrolet{background:#E9EFFB;color:#1D4E9B;}
+  .badge-multimarca{background:var(--gold-light);color:#8A6A1F;}
+  .badge-quimicos{background:var(--teal-light);color:#0B6E64;}
+  .badge-outros{background:#EFEFF3;color:#5B6072;}
+  .badge-curva-a{background:#E5F4E9;color:#1E7A3D;}
+  .badge-curva-b{background:var(--gold-light);color:#8A6A1F;}
+  .badge-curva-c{background:#FDEBD8;color:#B15A0F;}
+  .badge-curva-d, .badge-curva-k{background:#FBE7E5;color:#B03A2E;}
+  .badge-giro-alto{background:#E5F4E9;color:#1E7A3D;}
+  .badge-giro-baixo{background:var(--gold-light);color:#8A6A1F;}
+  .badge-giro-sem{background:#FBE7E5;color:#B03A2E;}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13.5px;}
+  .table-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);}
+
+  footer.app-footer{text-align:center;color:var(--text-muted);font-size:12px;padding:30px 0 10px;}
+
+  @media (max-width:1050px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .panel-grid{grid-template-columns:1fr;}
+  }
+  @media print{
+    .topbar-actions, .filters-card, .btn{display:none !important;}
+    body{background:#fff;}
+    .panel, .kpi-card, .table-card{box-shadow:none;border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ UPLOAD SCREEN ============ -->
+<div id="tela-upload">
+  <div class="upload-box">
+    <p class="upload-eyebrow">Central de Compras · Grupo Jorlan</p>
+    <h1 class="upload-title">Painel Acdelco</h1>
+    <p class="upload-sub">Acompanhamento mensal das vendas da linha Acdelco, segmentado por modalidade e linha de produto. Carregue a planilha-base para gerar o painel.</p>
+
+    <div class="dropzone" id="dropzone">
+      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V4m0 0L7 9m5-5l5 5M4 17.5v1a2 2 0 002 2h12a2 2 0 002-2v-1"/></svg>
+      <div class="dropzone-title">Arraste o arquivo .xlsx aqui</div>
+      <div class="dropzone-sub">ou clique para selecionar — ex.: Painel_Acdelco.xlsx</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+
+    <div class="upload-specs">
+      <div class="spec-chip"><div class="n">ABA VENDEDORES</div><div class="d">Usuário, nome, canal e loja</div></div>
+      <div class="spec-chip"><div class="n">ABA SEGMENTO</div><div class="d">Código, linha e modalidade Acdelco</div></div>
+      <div class="spec-chip"><div class="n">ABA VENDAS</div><div class="d">Movimentação de vendas do período</div></div>
+    </div>
+
+    <div class="upload-status" id="upload-status"><div class="spinner"></div><span id="upload-status-text">Processando planilha…</span></div>
+    <div class="upload-error" id="upload-error"></div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD SCREEN ============ -->
+<div id="tela-dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">AC</div>
+      <div>
+        <div class="topbar-title">Painel Acdelco — Grupo Jorlan</div>
+        <div class="topbar-sub" id="topbar-periodo">—</div>
+      </div>
+      <div class="topbar-update-badge" id="topbar-update-badge" style="display:none;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span id="topbar-update-badge-text">—</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="btn-refresh-sheets" style="display:none;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0113.9-3.6M19.5 15a8 8 0 01-13.9 3.6"/></svg>
+        <span id="btn-refresh-sheets-label">Atualizar dados</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-reset">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 9a8 8 0 0113.9-3.6M19.5 15a8 8 0 01-13.9 3.6"/></svg>
+        Trocar arquivo
+      </button>
+      <button class="btn btn-ghost" id="btn-print">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4h12v5M6 18h12v4H6v-4zM6 14h12M4 9h16v7H4V9z"/></svg>
+        Imprimir / PDF
+      </button>
+      <button class="btn btn-gold" id="btn-export">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16"/></svg>
+        Exportar relatório geral
+      </button>
+      <button class="btn btn-indigo" id="btn-apresentacao">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M3 5v11a1 1 0 001 1h6l-1 3h6l-1-3h6a1 1 0 001-1V5"/></svg>
+        <span id="btn-apresentacao-label">Baixar apresentação (PDF)</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="tabnav">
+    <div class="wrap tabnav-inner">
+      <button class="tab-btn active" data-tab="vendas">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>
+        Vendas
+      </button>
+      <button class="tab-btn" data-tab="estoque">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>
+        Estoque &amp; Catálogo
+      </button>
+    </div>
+  </div>
+
+  <div class="wrap">
+  <div id="tab-vendas" class="tab-panel active">
+
+    <!-- Filters -->
+    <div class="filters-card">
+      <div class="filters-row">
+        <div class="filter-group">
+          <div class="filter-label">Período</div>
+          <div class="pill-row" id="filtro-meses"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Modalidade</div>
+          <div class="pill-row" id="filtro-modalidade"></div>
+        </div>
+        <div class="filter-group" id="grupo-praca-vendas" style="display:none;">
+          <div class="filter-label">Praça</div>
+          <div class="pill-row" id="filtro-praca-vendas"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Canal</div>
+          <div class="pill-row" id="filtro-canal"></div>
+        </div>
+        <div class="filter-group" id="grupo-regiao" style="display:none;">
+          <div class="filter-label">Região / Loja</div>
+          <div class="pill-row" id="filtro-regiao"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Buscar linha de produto</div>
+          <input type="text" class="search-input" id="busca-linha" placeholder="Ex.: Pastilha, Bateria…">
+        </div>
+        <div class="filter-group filters-clear">
+          <button class="link-btn" id="btn-limpar-filtros">Limpar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card navy">
+        <div class="kpi-label">Faturamento no período</div>
+        <div class="kpi-value" id="kpi-faturamento">—</div>
+        <div class="kpi-delta" id="kpi-faturamento-delta"></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Quantidade vendida</div>
+        <div class="kpi-value" id="kpi-quantidade">—</div>
+        <div class="kpi-delta" id="kpi-quantidade-delta"></div>
+      </div>
+      <div class="kpi-card gold">
+        <div class="kpi-label">Nº de vendas</div>
+        <div class="kpi-value" id="kpi-vendas">—</div>
+        <div class="kpi-delta" id="kpi-vendas-sub"></div>
+      </div>
+      <div class="kpi-card teal">
+        <div class="kpi-label">Ticket médio</div>
+        <div class="kpi-value" id="kpi-ticket">—</div>
+        <div class="kpi-delta" id="kpi-ticket-sub"></div>
+      </div>
+    </div>
+
+    <!-- Projeção de fechamento do mês -->
+    <div class="proj-card" id="proj-card" style="display:none;">
+      <div class="proj-head">
+        <div>
+          <div class="proj-eyebrow">Tendência do mês em andamento</div>
+          <div class="proj-title" id="proj-titulo">Projeção de fechamento — —</div>
+        </div>
+        <div class="proj-total">
+          <div class="proj-total-label">Projeção de fechamento</div>
+          <div class="proj-total-value" id="proj-valor">—</div>
+        </div>
+      </div>
+      <div class="proj-grid">
+        <div class="proj-item">
+          <div class="proj-item-label">Faturado até agora</div>
+          <div class="proj-item-value" id="proj-atual">—</div>
+        </div>
+        <div class="proj-item">
+          <div class="proj-item-label">Dias com venda no mês</div>
+          <div class="proj-item-value" id="proj-dias-venda">—</div>
+        </div>
+        <div class="proj-item">
+          <div class="proj-item-label">Média por dia de venda</div>
+          <div class="proj-item-value" id="proj-media-dia">—</div>
+        </div>
+        <div class="proj-item">
+          <div class="proj-item-label">Dias restantes até o fim do mês</div>
+          <div class="proj-item-value" id="proj-dias-restantes">—</div>
+        </div>
+      </div>
+      <div class="proj-bar-track"><div class="proj-bar-fill" id="proj-bar-fill"></div></div>
+      <div class="proj-mod-breakdown" id="proj-mod-breakdown"></div>
+      <div class="proj-nota">Estimativa com base no ritmo médio de vendas dos dias em que houve movimento no mês, projetado para os dias restantes até o fechamento. Não considera sazonalidade, feriados ou campanhas pontuais — use como referência, não como meta fechada.</div>
+    </div>
+
+    <!-- Evolução mensal + Modalidade -->
+    <div class="panel-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Evolução mensal do faturamento</div>
+          <div class="panel-badge" id="badge-mom">—</div>
+        </div>
+        <div class="chart-box"><canvas id="chart-mensal"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Participação por modalidade</div>
+        </div>
+        <div class="chart-box"><canvas id="chart-modalidade"></canvas></div>
+        <div class="legend-list" id="legend-modalidade"></div>
+      </div>
+    </div>
+
+    <!-- Linha de produto -->
+
+    <div class="panel-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Ranking por linha de produto</div>
+          <div class="panel-badge" id="badge-linhas">—</div>
+        </div>
+        <div class="chart-box tall"><canvas id="chart-linhas"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Detalhamento por linha</div>
+        </div>
+        <div style="max-height:340px;overflow:auto;">
+          <table class="rank-table" id="tabela-linhas">
+            <thead><tr>
+              <th class="th-sort" data-key="linha">Linha</th>
+              <th class="th-sort" data-key="fat" style="text-align:right">Faturamento</th>
+              <th style="text-align:right">Part.</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vendedores -->
+    <div class="panel-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Faturamento por modalidade × mês</div>
+        </div>
+        <div class="chart-box"><canvas id="chart-mod-mes"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Top vendedores — itens Acdelco</div>
+        </div>
+        <div style="max-height:340px;overflow:auto;">
+          <table class="rank-table" id="tabela-vendedores">
+            <thead><tr>
+              <th>Vendedor</th>
+              <th style="text-align:right">Faturamento</th>
+              <th style="text-align:right">Qtd.</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Praça -->
+    <div class="panel" id="painel-praca-vendas" style="display:none;">
+      <div class="panel-head">
+        <div class="panel-title">Faturamento por praça</div>
+        <div class="panel-badge">Sempre consolidado + aberto por praça</div>
+      </div>
+      <div style="overflow:auto;">
+        <table class="rank-table compare-table" id="tabela-praca-vendas">
+          <thead><tr id="tabela-praca-vendas-head"></tr></thead>
+          <tbody id="tabela-praca-vendas-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empresa / Loja -->
+    <div class="panel" id="painel-empresa-vendas">
+      <div class="panel-head">
+        <div class="panel-title">Faturamento por empresa/loja</div>
+        <div class="panel-badge">Sempre consolidado + aberto por empresa</div>
+      </div>
+      <div style="overflow:auto;">
+        <table class="rank-table compare-table" id="tabela-empresa-vendas">
+          <thead><tr id="tabela-empresa-vendas-head"></tr></thead>
+          <tbody id="tabela-empresa-vendas-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detailed table -->
+    <div class="table-card">
+      <div class="panel-head" style="padding:18px 20px 0;">
+        <div class="panel-title">Vendas detalhadas — itens Acdelco</div>
+        <div class="panel-badge" id="badge-detalhe">—</div>
+      </div>
+      <div class="table-scroll">
+        <table class="detail" id="tabela-detalhe">
+          <thead>
+            <tr>
+              <th data-key="data">Data</th>
+              <th data-key="nota">Nota</th>
+              <th data-key="vendedor">Vendedor</th>
+              <th data-key="canal">Canal</th>
+              <th data-key="cliente">Cliente</th>
+              <th data-key="descricao">Item</th>
+              <th data-key="linha">Linha</th>
+              <th data-key="modalidade">Modalidade</th>
+              <th data-key="quantidade" style="text-align:right">Qtd.</th>
+              <th data-key="valor" style="text-align:right">Valor</th>
+              <th data-key="margem" style="text-align:right">Margem</th>
+            </tr>
+          </thead>
+          <tbody id="detalhe-body"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="detalhe-count">—</span>
+        <span id="detalhe-hint">Clique nos cabeçalhos para ordenar</span>
+      </div>
+    </div>
+
+    <footer class="app-footer">Painel Acdelco · Central de Compras · Grupo Jorlan</footer>
+  </div><!-- /tab-vendas -->
+
+  <div id="tab-estoque" class="tab-panel">
+
+    <!-- Upload do estoque -->
+    <div class="stock-upload-card" id="stock-upload-card">
+      <div class="stock-upload-eyebrow">Base de estoque · Curva · Custo contábil</div>
+      <div class="stock-upload-title">Carregue a base de itens em estoque</div>
+      <p class="stock-upload-sub">Arquivo .csv exportado do sistema (ex.: Itens.csv), com colunas de código, quantidade, custo contábil, médias de venda mensal (M1–M6) e curva ABC. Os itens são cruzados automaticamente com a aba Segmento Acdelco já carregada para identificar linha, aplicação e modalidade.</p>
+      <div class="dropzone dropzone-dark" id="stock-dropzone">
+        <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V4m0 0L7 9m5-5l5 5M4 17.5v1a2 2 0 002 2h12a2 2 0 002-2v-1"/></svg>
+        <div class="dropzone-title">Arraste o .csv de estoque aqui</div>
+        <div class="dropzone-sub">ou clique para selecionar</div>
+      </div>
+      <input type="file" id="stock-file-input" accept=".csv">
+      <div class="upload-status" id="stock-upload-status"><div class="spinner"></div><span id="stock-upload-status-text">Processando base de estoque…</span></div>
+      <div class="upload-error" id="stock-upload-error"></div>
+      <div class="stock-seg-warning" id="stock-seg-warning" style="display:none;">⚠️ A aba Segmento Acdelco ainda não foi carregada (faça isso na aba Vendas). Os itens serão classificados apenas pelo grupo do sistema, sem linha e aplicação detalhadas.</div>
+    </div>
+
+    <div id="stock-dashboard" style="display:none;">
+      <div class="filters-card">
+        <div class="filters-row">
+          <div class="filter-group">
+            <div class="filter-label">Modalidade</div>
+            <div class="pill-row" id="stock-filtro-modalidade"></div>
+          </div>
+          <div class="filter-group" id="stock-grupo-praca" style="display:none;">
+            <div class="filter-label">Praça</div>
+            <div class="pill-row" id="stock-filtro-praca"></div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Curva ABC</div>
+            <div class="pill-row" id="stock-filtro-curva"></div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Situação de giro</div>
+            <div class="pill-row" id="stock-filtro-giro"></div>
+          </div>
+          <div class="filter-group" id="stock-grupo-empresa" style="display:none;">
+            <div class="filter-label">Empresa/Loja</div>
+            <div class="pill-row" id="stock-filtro-empresa"></div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Buscar linha / descrição / aplicação</div>
+            <input type="text" class="search-input" id="stock-busca" placeholder="Ex.: Pastilha, Filtro…">
+          </div>
+          <div class="filter-group filters-clear">
+            <button class="link-btn" id="stock-btn-limpar">Limpar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card navy">
+          <div class="kpi-label">Itens Acdelco em estoque</div>
+          <div class="kpi-value" id="stock-kpi-skus">—</div>
+          <div class="kpi-delta" id="stock-kpi-skus-sub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Valor total em estoque</div>
+          <div class="kpi-value" id="stock-kpi-valor">—</div>
+          <div class="kpi-delta" id="stock-kpi-valor-sub">Custo contábil × quantidade</div>
+        </div>
+        <div class="kpi-card gold">
+          <div class="kpi-label">Quantidade total de peças</div>
+          <div class="kpi-value" id="stock-kpi-qtde">—</div>
+        </div>
+        <div class="kpi-card teal">
+          <div class="kpi-label">Itens sem giro (6 meses)</div>
+          <div class="kpi-value" id="stock-kpi-semgiro">—</div>
+          <div class="kpi-delta" id="stock-kpi-semgiro-sub"></div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Estoque (valor) por modalidade</div>
+          </div>
+          <div class="chart-box"><canvas id="stock-chart-modalidade"></canvas></div>
+          <div class="legend-list" id="stock-legend-modalidade"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Distribuição por curva ABC</div>
+            <div class="panel-badge">A = maior giro/valor · D/K = obsoleto</div>
+          </div>
+          <div class="chart-box"><canvas id="stock-chart-curva"></canvas></div>
+          <div class="curva-export-row">
+            <span class="curva-export-label">Exportar itens por curva:</span>
+            <select id="stock-curva-select"></select>
+            <button class="btn btn-outline btn-mini-export" id="stock-btn-export-curva">Exportar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Mais vendidos — média mensal (top 20)</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div class="panel-badge" id="stock-badge-maisvendidos">—</div>
+              <button class="btn btn-outline btn-mini-export" id="stock-btn-export-mais">Exportar top 100</button>
+            </div>
+          </div>
+          <div style="max-height:380px;overflow:auto;">
+            <table class="rank-table" id="stock-tabela-maisvendidos">
+              <thead><tr>
+                <th>Item</th>
+                <th style="text-align:right">Méd./mês</th>
+                <th style="text-align:right">Estoque</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Menos vendidos (top 20)</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div class="panel-badge" id="stock-badge-parados">—</div>
+              <button class="btn btn-outline btn-mini-export" id="stock-btn-export-menos">Exportar curva C/D/K</button>
+            </div>
+          </div>
+          <div style="max-height:380px;overflow:auto;">
+            <table class="rank-table" id="stock-tabela-parados">
+              <thead><tr>
+                <th>Item</th>
+                <th style="text-align:right">Méd./mês</th>
+                <th style="text-align:right">Estoque</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Praça -->
+      <div class="panel" id="painel-praca-estoque" style="display:none;">
+        <div class="panel-head">
+          <div class="panel-title">Estoque por praça</div>
+          <div class="panel-badge">Sempre consolidado + aberto por praça</div>
+        </div>
+        <div style="overflow:auto;">
+          <table class="rank-table compare-table" id="tabela-praca-estoque">
+            <thead><tr id="tabela-praca-estoque-head"></tr></thead>
+            <tbody id="tabela-praca-estoque-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empresa / Loja -->
+      <div class="panel" id="painel-empresa-estoque">
+        <div class="panel-head">
+          <div class="panel-title">Estoque por empresa/loja</div>
+          <div class="panel-badge">Sempre consolidado + aberto por empresa</div>
+        </div>
+        <div style="overflow:auto;">
+          <table class="rank-table compare-table" id="tabela-empresa-estoque">
+            <thead><tr id="tabela-empresa-estoque-head"></tr></thead>
+            <tbody id="tabela-empresa-estoque-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Catálogo completo -->
+      <div class="table-card">
+        <div class="panel-head" style="padding:18px 20px 0;">
+          <div class="panel-title">Catálogo Acdelco em estoque — por segmento, linha e aplicação</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="panel-badge" id="stock-badge-catalogo">—</div>
+            <button class="btn btn-gold" id="stock-btn-export" style="padding:8px 14px;font-size:12.5px;">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16"/></svg>
+              Exportar catálogo e relatório
+            </button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="detail" id="stock-tabela-catalogo">
+            <thead>
+              <tr>
+                <th data-key="codItem">Código</th>
+                <th data-key="descricao">Descrição</th>
+                <th data-key="aplicacao">Aplicação</th>
+                <th data-key="linha">Linha</th>
+                <th data-key="modalidade">Modalidade</th>
+                <th data-key="curva">Curva</th>
+                <th data-key="qtde" style="text-align:right">Estoque</th>
+                <th data-key="mediaMensal" style="text-align:right">Méd./mês</th>
+                <th data-key="cobertura" style="text-align:right">Cobertura</th>
+                <th data-key="precoVenda" style="text-align:right">Preço venda</th>
+                <th>Empresas</th>
+              </tr>
+            </thead>
+            <tbody id="stock-catalogo-body"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="stock-catalogo-count">—</span>
+          <span>Clique nos cabeçalhos para ordenar</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-estoque -->
+  </div><!-- /wrap -->
+</div>
+
+<script>
+/* ============================================================
+   UTILITÁRIOS
+============================================================ */
+const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function norm(s){ return (s===null||s===undefined) ? '' : String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function parseBR(v){
+  if(v===null||v===undefined||v==='') return 0;
+  if(typeof v==='number') return v;
+  let s=String(v).trim().replace(/\./g,'').replace(',','.');
+  const n=parseFloat(s);
+  return isNaN(n)?0:n;
+}
+function parseDataBR(v){
+  if(v===null||v===undefined||v==='') return null;
+  if(v instanceof Date) return v;
+  if(typeof v==='number'){ // serial excel
+    const d = XLSX.SSF.parse_date_code(v);
+    if(!d) return null;
+    return new Date(d.y, d.m-1, d.d, d.H||0, d.M||0, d.S||0);
+  }
+  const s=String(v).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(!m) return null;
+  return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
+}
+function mesKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function mesLabel(key){ const [y,m]=key.split('-'); return MESES_PT[+m-1]+'/'+y.slice(2); }
+function fmtBRL(n){ return (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}); }
+function fmtBRLCent(n){ return (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtNum(n){ return (n||0).toLocaleString('pt-BR',{maximumFractionDigits:1}); }
+function fmtPct(n){ return (n||0).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'; }
+function fmtData(d){ return d ? d.toLocaleDateString('pt-BR') : '—'; }
+function normalizaModalidade(raw){
+  const n = norm(raw);
+  if(!n) return 'Não classificado';
+  if(n.startsWith('chevrolet')) return 'Chevrolet';
+  if(n.startsWith('multimarca')) return 'Multimarca';
+  if(n.startsWith('quimic')) return 'Químicos';
+  return raw.trim();
+}
+function modClass(m){
+  const n = norm(m);
+  if(n==='chevrolet') return 'chevrolet';
+  if(n==='multimarca') return 'multimarca';
+  if(n==='quimicos') return 'quimicos';
+  return 'outros';
+}
+const MOD_COLOR = { 'Chevrolet':'#1D4E9B', 'Multimarca':'#C9972E', 'Químicos':'#0E9488', 'Não classificado':'#6B7280' };
+
+// mapeamento código de empresa -> praça (mesma lógica vale tanto para Vendas quanto para Estoque,
+// já que os códigos de empresa identificam a loja/praça em qualquer um dos dois arquivos)
+const PRACA_POR_EMPRESA = { '9':'Jorlan Goiânia', '15':'Jorlan Goiânia', '122':'Jorlan Belo Horizonte', '124':'Jorlan Belo Horizonte', '128':'Jorlan Belo Horizonte' };
+function pracaDoEmpresa(codigo){
+  if(!codigo) return 'Não classificado';
+  return PRACA_POR_EMPRESA[String(codigo).trim()] || 'Não classificado';
+}
+const PRACA_COLOR = { 'Jorlan Goiânia':'#C9972E', 'Jorlan Belo Horizonte':'#4F5FDE', 'Não classificado':'#6B7280' };
+function corPraca(p){ return PRACA_COLOR[p] || '#8B90A8'; }
+function corModalidade(m){ return MOD_COLOR[m] || '#8B90A8'; }
+
+/* ============================================================
+   ESTADO
+============================================================ */
+let RAW = [];          // todas as vendas Acdelco já normalizadas
+let META = {};         // metadados do arquivo carregado
+let FILTROS = { meses: new Set(), modalidades: new Set(), canais: new Set(), regioes: new Set(), pracas: new Set(), buscaLinha: '' };
+let SORT_DETALHE = { key:'data', dir:'desc' };
+let SORT_LINHAS = { key:'fat', dir:'desc' };
+let CHARTS = {};
+let SEG_MAP = null;     // Map código material -> {desc, linha, aplicacao, modalidade} — populado ao carregar a planilha de Vendas, reaproveitado pelo Estoque
+let FONTE_ATUAL = 'local'; // 'local' (upload manual) ou 'sheets' (Google Sheets via Apps Script)
+
+let STOCK_RAW = [];
+let STOCK_FILTROS = { modalidades: new Set(), curvas: new Set(), giros: new Set(), empresas: new Set(), pracas: new Set(), busca: '' };
+let STOCK_SORT_CATALOGO = { key:'qtde', dir:'desc' };
+let STOCK_CHARTS = {};
+
+/* ============================================================
+   LEITURA DO ARQUIVO
+============================================================ */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const statusBox = document.getElementById('upload-status');
+const statusText = document.getElementById('upload-status-text');
+const errorBox = document.getElementById('upload-error');
+
+dropzone.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', ()=> dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+function showError(msg){
+  errorBox.style.display='block'; errorBox.textContent = msg;
+  statusBox.style.display='none';
+}
+function showStatus(msg){
+  errorBox.style.display='none';
+  statusBox.style.display='flex'; statusText.textContent = msg;
+}
+
+function handleFile(file){
+  showStatus('Lendo arquivo…');
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, { type:'array', cellDates:false });
+      processWorkbook(wb, file.name);
+    }catch(err){
+      console.error(err);
+      showError('Não foi possível ler o arquivo. Verifique se é um .xlsx válido. (' + err.message + ')');
+    }
+  };
+  reader.onerror = ()=> showError('Falha ao carregar o arquivo.');
+  reader.readAsArrayBuffer(file);
+}
+
+/* ============================================================
+   CARREGAMENTO AUTOMÁTICO VIA GOOGLE SHEETS (Apps Script)
+============================================================ */
+// Cole aqui a URL de implantação do Apps Script (termina em /exec) depois de publicá-lo.
+// Deixando em branco, o painel abre direto na tela de upload manual, sem tentar conectar.
+const GOOGLE_SCRIPT_URL = '';
+
+async function carregarDoGoogleSheets(mostrarErroSeFalhar){
+  if(!GOOGLE_SCRIPT_URL){ return false; }
+  showStatus('Conectando à planilha do Google Sheets…');
+  try{
+    const resp = await fetch(GOOGLE_SCRIPT_URL + (GOOGLE_SCRIPT_URL.includes('?')?'&':'?') + 't=' + Date.now(), { cache:'no-store' });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if(data.erro) throw new Error(data.erro);
+    if(!data.abas || !Object.keys(data.abas).length) throw new Error('A planilha não retornou nenhuma aba.');
+    const wb = { SheetNames: Object.keys(data.abas), _fromJSON: true, _abas: data.abas };
+    const rotuloData = data.geradoEm ? new Date(data.geradoEm).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR');
+    const ultimaVendaGeralExterna = data.ultimaVendaGeral ? parseDataBR(data.ultimaVendaGeral) : null;
+    processWorkbook(wb, 'Google Sheets · atualizado em ' + rotuloData, ultimaVendaGeralExterna);
+    return true;
+  }catch(err){
+    console.error('Falha ao carregar do Google Sheets:', err);
+    if(mostrarErroSeFalhar){
+      showError('Não foi possível conectar à planilha do Google Sheets (' + err.message + '). Você pode enviar o arquivo manualmente abaixo, ou tentar novamente mais tarde.');
+    } else {
+      statusBox.style.display = 'none';
+    }
+    return false;
+  }
+}
+
+// tenta conectar automaticamente assim que a página abre
+carregarDoGoogleSheets(true);
+
+function findSheet(wb, testFn){
+  return wb.SheetNames.find(n => testFn(norm(n)));
+}
+function findCol(headers, testFn){
+  for(let i=0;i<headers.length;i++){ if(testFn(norm(headers[i]))) return i; }
+  return -1;
+}
+function sheetToRows(wb, name){
+  if(wb._fromJSON){
+    const arr = wb._abas[name] || [];
+    const headers = (arr[0]||[]).map(h=>h===null||h===undefined?'':String(h));
+    return { headers, rows: arr.slice(1) };
+  }
+  const ws = wb.Sheets[name];
+  const arr = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:null });
+  const headers = (arr[0]||[]).map(h=>h===null?'':String(h));
+  return { headers, rows: arr.slice(1) };
+}
+
+function processWorkbook(wb, filename, ultimaVendaGeralExterna){
+  const nomeVendedores = findSheet(wb, n=>n.includes('vended'));
+  const nomeSegmento   = findSheet(wb, n=>n.includes('segmento'));
+  let nomesVendas    = wb.SheetNames.filter(n => n!==nomeVendedores && n!==nomeSegmento);
+
+  if(!nomeVendedores || !nomeSegmento || nomesVendas.length===0){
+    showError('Não encontrei as três abas esperadas (Vendedores, Segmento Acdelco e Vendas). Verifique os nomes das abas no arquivo.');
+    return;
+  }
+  showStatus('Cruzando vendedores, segmento e vendas…');
+
+  // detecta se uma das abas é uma base de Estoque (colunas típicas: Cod Item, Qtde, Curva) — se houver,
+  // processa junto automaticamente e não trata como aba de vendas
+  let nomeEstoque = null, estoqueSheet = null;
+  nomesVendas.forEach(n=>{
+    if(nomeEstoque) return;
+    const tmp = sheetToRows(wb, n);
+    if(pareceAbaEstoque(tmp.headers)){ nomeEstoque = n; estoqueSheet = tmp; }
+  });
+  if(nomeEstoque){
+    nomesVendas = nomesVendas.filter(n=>n!==nomeEstoque);
+  }
+  if(nomesVendas.length===0){
+    showError('Encontrei uma aba de Estoque, mas nenhuma aba de Vendas além dela. Verifique os nomes das abas no arquivo.');
+    return;
+  }
+
+  // ---- Vendedores ----
+  const vd = sheetToRows(wb, nomeVendedores);
+  const cUsuario = findCol(vd.headers, h=>h.includes('usuario'));
+  const cNome    = findCol(vd.headers, h=>h.includes('nomecompleto')) >=0 ? findCol(vd.headers, h=>h.includes('nomecompleto')) : findCol(vd.headers, h=>h.includes('nome') && !h.includes('padrao'));
+  const cNomePad = findCol(vd.headers, h=>h.includes('nomepadrao'));
+  const cCanal   = findCol(vd.headers, h=>h==='canal');
+  const cLoja    = findCol(vd.headers, h=>h==='loja');
+  const cStatus  = findCol(vd.headers, h=>h.includes('status'));
+  const vendMap = new Map();
+  vd.rows.forEach(r=>{
+    if(!r || r[cUsuario]===null) return;
+    const key = norm(r[cUsuario]).toUpperCase().trim();
+    vendMap.set(String(r[cUsuario]).trim(), {
+      nome: (cNome>=0 && r[cNome]) ? r[cNome] : (cNomePad>=0 ? r[cNomePad] : r[cUsuario]),
+      canal: cCanal>=0 && r[cCanal] ? String(r[cCanal]).trim() : null,
+      loja: cLoja>=0 && r[cLoja] ? String(r[cLoja]).trim() : null,
+      status: cStatus>=0 ? r[cStatus] : null
+    });
+  });
+
+  // ---- Segmento Acdelco ----
+  const sg = sheetToRows(wb, nomeSegmento);
+  const cCodMat = findCol(sg.headers, h=>h.includes('codigo') && h.includes('material'));
+  const cDescMat= findCol(sg.headers, h=>h.includes('descricao'));
+  const cLinha  = findCol(sg.headers, h=>h==='linha');
+  const cApl    = findCol(sg.headers, h=>h.includes('aplicacao'));
+  const cModal  = findCol(sg.headers, h=>h.includes('modalidade'));
+  const segMap = new Map();
+  sg.rows.forEach(r=>{
+    if(!r || r[cCodMat]===null || r[cCodMat]==='') return;
+    const key = String(r[cCodMat]).trim();
+    segMap.set(key, {
+      desc: cDescMat>=0 ? r[cDescMat] : '',
+      linha: cLinha>=0 && r[cLinha] ? String(r[cLinha]).trim() : 'Sem linha',
+      aplicacao: cApl>=0 ? r[cApl] : '',
+      modalidade: normalizaModalidade(cModal>=0 ? r[cModal] : '')
+    });
+  });
+
+  if(segMap.size===0){
+    showError('A aba de Segmento Acdelco não retornou nenhum código de material válido.');
+    return;
+  }
+  SEG_MAP = segMap; // disponibiliza para a aba de Estoque cruzar os itens
+
+  if(estoqueSheet){
+    const resultado = montarItensEstoque(estoqueSheet.headers, estoqueSheet.rows);
+    if(resultado.ok && resultado.itens.length){ STOCK_RAW = resultado.itens; }
+  }
+
+  // ---- Vendas (uma ou mais abas) ----
+  const dados = [];
+  let regioesDetectadas = new Set();
+  let ultimaVendaGeralLocal = null; // maior data de venda encontrada, considerando TODOS os itens (não só Acdelco)
+  nomesVendas.forEach(nomeAba=>{
+    const vs = sheetToRows(wb, nomeAba);
+    if(vs.headers.length===0) return;
+    const cItem   = findCol(vs.headers, h=>h.includes('cod') && h.includes('item'));
+    const cQtd    = findCol(vs.headers, h=>h.includes('quantidade'));
+    const cValor  = findCol(vs.headers, h=>h.includes('preco') && h.includes('final'));
+    const cMarg   = findCol(vs.headers, h=>h.includes('marg'));
+    const cData   = findCol(vs.headers, h=>h==='venda');
+    const cNota   = findCol(vs.headers, h=>h==='nota');
+    const cVend   = findCol(vs.headers, h=>h==='vendedor');
+    const cClienteNome = findCol(vs.headers, h=>h.includes('nome') && h.includes('cliente'));
+    const cDescItem = findCol(vs.headers, h=>h.includes('descricao') && !h.includes('material'));
+    const cUF = findCol(vs.headers, h=>h==='uf');
+    const cCodEmpresa = findCol(vs.headers, h=>h.includes('cod') && h.includes('empresa'));
+
+    if(cItem<0 || cValor<0){ return; }
+
+    // extrai um rótulo de região a partir do nome da aba (ex.: "VENDA MG" -> "MG")
+    let regiaoLabel = nomeAba.replace(/venda?s?/i,'').trim();
+    if(!regiaoLabel) regiaoLabel = nomeAba;
+    regioesDetectadas.add(regiaoLabel);
+
+    if(cData>=0){
+      vs.rows.forEach(r=>{
+        if(!r) return;
+        const dtGeral = parseDataBR(r[cData]);
+        if(dtGeral && (!ultimaVendaGeralLocal || dtGeral>ultimaVendaGeralLocal)) ultimaVendaGeralLocal = dtGeral;
+      });
+    }
+
+    vs.rows.forEach(r=>{
+      if(!r || r[cItem]===null || r[cItem]==='') return;
+      const codItem = String(r[cItem]).trim();
+      const seg = segMap.get(codItem);
+      if(!seg) return; // não é item Acdelco monitorado
+
+      const dt = cData>=0 ? parseDataBR(r[cData]) : null;
+      const vendCod = cVend>=0 && r[cVend] ? String(r[cVend]).trim() : null;
+      const vinfo = vendCod ? vendMap.get(vendCod) : null;
+      const codEmpresa = cCodEmpresa>=0 && r[cCodEmpresa]!==null ? String(r[cCodEmpresa]).trim() : null;
+      // respaldo de loja quando a aba Vendedores não tem Canal/Loja cadastrados para o código do vendedor
+      const lojaFallback = codEmpresa ? ('Empresa '+codEmpresa) : regiaoLabel;
+
+      dados.push({
+        data: dt,
+        mes: dt ? mesKey(dt) : 'sem-data',
+        nota: cNota>=0 ? r[cNota] : '',
+        vendedorCod: vendCod || '—',
+        vendedorNome: vinfo && vinfo.nome ? vinfo.nome : (vendCod || 'Não identificado'),
+        canal: (vinfo && vinfo.canal) ? vinfo.canal.trim() : 'Não classificado',
+        loja: (vinfo && vinfo.loja) ? vinfo.loja.trim() : lojaFallback,
+        regiao: regiaoLabel,
+        codEmpresa: codEmpresa,
+        praca: pracaDoEmpresa(codEmpresa),
+        cliente: cClienteNome>=0 ? (r[cClienteNome]||'—') : '—',
+        codItem: codItem,
+        descricao: (cDescItem>=0 && r[cDescItem]) ? r[cDescItem] : seg.desc,
+        linha: seg.linha,
+        aplicacao: seg.aplicacao,
+        modalidade: seg.modalidade,
+        quantidade: cQtd>=0 ? parseBR(r[cQtd]) : 0,
+        valor: parseBR(r[cValor]),
+        margem: cMarg>=0 ? parseBR(r[cMarg]) : null,
+        uf: cUF>=0 ? r[cUF] : null
+      });
+    });
+  });
+
+  if(dados.length===0){
+    showError('Nenhuma venda de item Acdelco foi encontrada cruzando os códigos das abas de Vendas e Segmento. Confira se os códigos de material coincidem.');
+    return;
+  }
+
+  RAW = dados;
+  META = {
+    filename: filename,
+    geradoEm: new Date(),
+    regioes: Array.from(regioesDetectadas),
+    totalLinhasBrutas: dados.length,
+    ultimaVendaGeral: ultimaVendaGeralExterna || ultimaVendaGeralLocal
+  };
+
+  montarFiltros();
+  document.getElementById('tela-upload').style.display='none';
+  document.getElementById('tela-dashboard').style.display='block';
+  renderTudo();
+
+  const badge = document.getElementById('topbar-update-badge');
+  if(META.ultimaVendaGeral){
+    badge.style.display = 'flex';
+    document.getElementById('topbar-update-badge-text').textContent = 'Última venda na base: ' + fmtData(META.ultimaVendaGeral) + ' ' + String(META.ultimaVendaGeral.getHours()).padStart(2,'0')+':'+String(META.ultimaVendaGeral.getMinutes()).padStart(2,'0');
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if(STOCK_RAW.length){
+    document.getElementById('stock-upload-card').style.display='none';
+    document.getElementById('stock-dashboard').style.display='block';
+    document.getElementById('stock-seg-warning').style.display='none';
+    montarFiltrosEstoque();
+    renderEstoqueTudo();
+  }
+
+  FONTE_ATUAL = wb._fromJSON ? 'sheets' : 'local';
+  document.getElementById('btn-refresh-sheets').style.display = (FONTE_ATUAL==='sheets') ? 'inline-flex' : 'none';
+}
+
+/* ============================================================
+   FILTROS
+============================================================ */
+function mesesDisponiveis(){
+  const s = new Set(RAW.filter(r=>r.mes!=='sem-data').map(r=>r.mes));
+  return Array.from(s).sort();
+}
+function modalidadesDisponiveis(){
+  return Array.from(new Set(RAW.map(r=>r.modalidade))).sort();
+}
+function canaisDisponiveis(){
+  return Array.from(new Set(RAW.map(r=>r.canal))).sort();
+}
+function regioesDisponiveis(){
+  return Array.from(new Set(RAW.map(r=>r.regiao))).sort();
+}
+
+function montarFiltros(){
+  const meses = mesesDisponiveis();
+  FILTROS.meses = new Set(meses); // todos selecionados por padrão
+  const cMeses = document.getElementById('filtro-meses');
+  cMeses.innerHTML='';
+  meses.forEach(m=>{
+    const p = document.createElement('div');
+    p.className='pill active'; p.textContent = mesLabel(m); p.dataset.val=m;
+    p.onclick = ()=>{ togglePill(FILTROS.meses, m, p); renderTudo(); };
+    cMeses.appendChild(p);
+  });
+
+  const modalidades = modalidadesDisponiveis();
+  FILTROS.modalidades = new Set(modalidades);
+  const cMod = document.getElementById('filtro-modalidade');
+  cMod.innerHTML='';
+  modalidades.forEach(m=>{
+    const p = document.createElement('div');
+    p.className='pill active mod-'+modClass(m); p.textContent = m; p.dataset.val=m;
+    p.onclick = ()=>{ togglePill(FILTROS.modalidades, m, p, true); renderTudo(); };
+    cMod.appendChild(p);
+  });
+
+  const canais = canaisDisponiveis();
+  FILTROS.canais = new Set(canais);
+  const cCanal = document.getElementById('filtro-canal');
+  cCanal.innerHTML='';
+  canais.forEach(c=>{
+    const p = document.createElement('div');
+    p.className='pill active'; p.textContent = c; p.dataset.val=c;
+    p.onclick = ()=>{ togglePill(FILTROS.canais, c, p); renderTudo(); };
+    cCanal.appendChild(p);
+  });
+
+  const regioes = regioesDisponiveis();
+  FILTROS.regioes = new Set(regioes);
+  if(regioes.length>1){
+    document.getElementById('grupo-regiao').style.display='flex';
+    const cReg = document.getElementById('filtro-regiao');
+    cReg.innerHTML='';
+    regioes.forEach(rg=>{
+      const p = document.createElement('div');
+      p.className='pill active'; p.textContent = rg; p.dataset.val=rg;
+      p.onclick = ()=>{ togglePill(FILTROS.regioes, rg, p); renderTudo(); };
+      cReg.appendChild(p);
+    });
+  } else {
+    document.getElementById('grupo-regiao').style.display='none';
+  }
+
+  const pracas = Array.from(new Set(RAW.map(r=>r.praca))).sort();
+  FILTROS.pracas = new Set(pracas);
+  if(pracas.length>1){
+    document.getElementById('grupo-praca-vendas').style.display='flex';
+    const cPraca = document.getElementById('filtro-praca-vendas');
+    cPraca.innerHTML='';
+    pracas.forEach(pc=>{
+      const p = document.createElement('div');
+      p.className='pill active'; p.textContent = pc; p.dataset.val=pc;
+      p.style.background = corPraca(pc); p.style.borderColor = corPraca(pc); p.style.color = '#fff';
+      p.onclick = ()=>{
+        togglePill(FILTROS.pracas, pc, p);
+        p.style.background = FILTROS.pracas.has(pc) ? corPraca(pc) : '';
+        p.style.color = FILTROS.pracas.has(pc) ? '#fff' : '';
+        renderTudo();
+      };
+      cPraca.appendChild(p);
+    });
+  } else {
+    document.getElementById('grupo-praca-vendas').style.display='none';
+  }
+
+  document.getElementById('busca-linha').value='';
+  document.getElementById('busca-linha').oninput = (e)=>{ FILTROS.buscaLinha = norm(e.target.value); renderTudo(); };
+
+  document.getElementById('btn-limpar-filtros').onclick = ()=>{ montarFiltros(); renderTudo(); };
+
+  const periodo = meses.length ? (mesLabel(meses[0]) + ' – ' + mesLabel(meses[meses.length-1])) : '—';
+  document.getElementById('topbar-periodo').textContent = 'Período disponível: ' + periodo + ' · ' + META.filename;
+}
+function togglePill(setRef, val, el, exclusive){
+  if(setRef.has(val)){ setRef.delete(val); el.classList.remove('active'); }
+  else{ setRef.add(val); el.classList.add('active'); }
+}
+
+/* ============================================================
+   AGREGAÇÃO
+============================================================ */
+function dadosFiltrados(){
+  return RAW.filter(r=>
+    (r.mes==='sem-data' || FILTROS.meses.has(r.mes)) &&
+    FILTROS.modalidades.has(r.modalidade) &&
+    FILTROS.canais.has(r.canal) &&
+    FILTROS.regioes.has(r.regiao) &&
+    FILTROS.pracas.has(r.praca) &&
+    (!FILTROS.buscaLinha || norm(r.linha).includes(FILTROS.buscaLinha))
+  );
+}
+
+function agregarPorMes(data){
+  const map = new Map();
+  data.forEach(r=>{
+    const k = r.mes;
+    if(!map.has(k)) map.set(k, { fat:0, qtd:0, n:0 });
+    const o = map.get(k); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  return map;
+}
+function agregarPorModalidade(data){
+  const map = new Map();
+  data.forEach(r=>{
+    if(!map.has(r.modalidade)) map.set(r.modalidade, { fat:0, qtd:0, n:0 });
+    const o = map.get(r.modalidade); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  return map;
+}
+function agregarPorLinha(data){
+  const map = new Map();
+  data.forEach(r=>{
+    const k = r.linha+'|||'+r.modalidade;
+    if(!map.has(k)) map.set(k, { linha:r.linha, modalidade:r.modalidade, fat:0, qtd:0, n:0 });
+    const o = map.get(k); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  return Array.from(map.values());
+}
+function agregarPorVendedor(data){
+  const map = new Map();
+  data.forEach(r=>{
+    if(!map.has(r.vendedorNome)) map.set(r.vendedorNome, { fat:0, qtd:0, n:0 });
+    const o = map.get(r.vendedorNome); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  return Array.from(map.entries()).map(([nome,v])=>({nome,...v})).sort((a,b)=>b.fat-a.fat);
+}
+function agregarModalidadeMes(data, meses){
+  const mods = Array.from(new Set(data.map(r=>r.modalidade)));
+  const res = {};
+  mods.forEach(m=> res[m] = meses.map(()=>0));
+  data.forEach(r=>{
+    const idx = meses.indexOf(r.mes);
+    if(idx>=0) res[r.modalidade][idx]+=r.valor;
+  });
+  return { mods, res };
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function tentar(nome, fn){
+  try{ fn(); }
+  catch(err){ console.error('Falha ao renderizar: '+nome, err); }
+}
+
+function renderTudo(){
+  const data = dadosFiltrados();
+  const meses = mesesDisponiveis().filter(m=>FILTROS.meses.has(m));
+
+  tentar('KPIs', ()=>renderKPIs(data, meses));
+  tentar('projeção', renderProjecao);
+  if(typeof Chart === 'undefined'){
+    console.error('Chart.js não carregou — gráficos ficarão em branco, mas as tabelas abaixo continuam funcionando.');
+  } else {
+    tentar('gráfico mensal', ()=>renderChartMensal(data, meses));
+    tentar('gráfico modalidade', ()=>renderChartModalidade(data));
+    tentar('gráfico linhas', ()=>renderChartLinhas(data));
+    tentar('gráfico modalidade x mês', ()=>renderChartModMes(data, meses));
+  }
+  tentar('tabela de linhas', ()=>renderTabelaLinhas(data));
+  tentar('tabela de vendedores', ()=>renderTabelaVendedores(data));
+  tentar('praça vendas', ()=>renderPracaVendas(data));
+  tentar('empresa/loja vendas', ()=>renderEmpresaVendas(data));
+  tentar('tabela detalhada', ()=>renderTabelaDetalhe(data));
+}
+
+function renderKPIs(data, meses){
+  const fat = data.reduce((s,r)=>s+r.valor,0);
+  const qtd = data.reduce((s,r)=>s+r.quantidade,0);
+  const n = data.length;
+  const ticket = n ? fat/n : 0;
+
+  document.getElementById('kpi-faturamento').textContent = fmtBRLCent(fat);
+  document.getElementById('kpi-quantidade').textContent = fmtNum(qtd)+' un.';
+  document.getElementById('kpi-vendas').textContent = fmtNum(n);
+  document.getElementById('kpi-ticket').textContent = fmtBRLCent(ticket);
+  document.getElementById('kpi-vendas-sub').textContent = meses.length+' mês(es) no período';
+  document.getElementById('kpi-quantidade-delta').textContent = '';
+  document.getElementById('kpi-ticket-sub').textContent = 'Valor médio por venda';
+
+  // MoM usando os dois últimos meses do período filtrado
+  const porMes = agregarPorMes(data);
+  const ordenados = meses.filter(m=>porMes.has(m));
+  const badge = document.getElementById('badge-mom');
+  const deltaEl = document.getElementById('kpi-faturamento-delta');
+  if(ordenados.length>=2){
+    const atual = porMes.get(ordenados[ordenados.length-1]).fat;
+    const anterior = porMes.get(ordenados[ordenados.length-2]).fat;
+    const variacao = anterior ? ((atual-anterior)/anterior*100) : 0;
+    const sinal = variacao>=0?'up':'down';
+    const seta = variacao>=0?'▲':'▼';
+    badge.textContent = mesLabel(ordenados[ordenados.length-1])+' vs '+mesLabel(ordenados[ordenados.length-2])+': '+seta+' '+fmtPct(Math.abs(variacao));
+    deltaEl.className='kpi-delta '+sinal;
+    deltaEl.textContent = seta+' '+fmtPct(Math.abs(variacao))+' vs mês anterior';
+  } else {
+    badge.textContent = 'Selecione 2+ meses p/ comparar';
+    deltaEl.className='kpi-delta flat'; deltaEl.textContent='';
+  }
+}
+
+function calcularProjecao(){
+  // usa a última data de venda presente na planilha como referência do "mês em andamento" —
+  // não a data real do computador, já que o relatório pode ser aberto dias/semanas depois do upload
+  const ultimaDataGeral = RAW.reduce((max,r)=> (r.data && (!max || r.data>max)) ? r.data : max, null);
+  if(!ultimaDataGeral) return null;
+  const hoje = ultimaDataGeral;
+  const mesAtualKey = mesKey(hoje);
+  // usa os mesmos filtros de modalidade/canal/região/busca, mas sempre olha para o mês mais recente com dados
+  // (independente de quais meses estejam marcados no filtro de período)
+  const rowsMes = RAW.filter(r=>
+    r.mes===mesAtualKey &&
+    FILTROS.modalidades.has(r.modalidade) &&
+    FILTROS.canais.has(r.canal) &&
+    FILTROS.regioes.has(r.regiao) &&
+    (!FILTROS.buscaLinha || norm(r.linha).includes(FILTROS.buscaLinha))
+  );
+  if(!rowsMes.length) return null;
+
+  const diasComVendaSet = new Set(rowsMes.filter(r=>r.data).map(r=>r.data.getDate()));
+  if(diasComVendaSet.size===0) return null;
+
+  const ano = hoje.getFullYear(), mesNum = hoje.getMonth();
+  const diasTotaisMes = new Date(ano, mesNum+1, 0).getDate();
+  const ultimoDia = Math.max(...Array.from(diasComVendaSet));
+  const fatAtual = rowsMes.reduce((s,r)=>s+r.valor,0);
+  const diasComVenda = diasComVendaSet.size;
+  const mediaDiaria = fatAtual / diasComVenda;
+  const diasRestantes = Math.max(0, diasTotaisMes - ultimoDia);
+  const projecaoTotal = fatAtual + mediaDiaria * diasRestantes;
+
+  // quebra da projeção por modalidade (Chevrolet / Multimarca / Químicos / outras presentes no mês)
+  const modsPresentes = Array.from(new Set(rowsMes.map(r=>r.modalidade)));
+  const ordemMod = ['Chevrolet','Multimarca','Químicos'].filter(m=>modsPresentes.includes(m))
+    .concat(modsPresentes.filter(m=>!['Chevrolet','Multimarca','Químicos'].includes(m)));
+  const porModalidade = ordemMod.map(mod=>{
+    const rowsMod = rowsMes.filter(r=>r.modalidade===mod);
+    const diasSetMod = new Set(rowsMod.filter(r=>r.data).map(r=>r.data.getDate()));
+    const fatMod = rowsMod.reduce((s,r)=>s+r.valor,0);
+    const diasComVendaMod = diasSetMod.size;
+    const ultimoDiaMod = diasComVendaMod ? Math.max(...Array.from(diasSetMod)) : ultimoDia;
+    const mediaDiariaMod = diasComVendaMod ? fatMod/diasComVendaMod : 0;
+    const diasRestantesMod = Math.max(0, diasTotaisMes - ultimoDiaMod);
+    const projecaoMod = fatMod + mediaDiariaMod * diasRestantesMod;
+    return { modalidade:mod, fatAtual:fatMod, diasComVenda:diasComVendaMod, mediaDiaria:mediaDiariaMod, diasRestantes:diasRestantesMod, projecaoTotal:projecaoMod };
+  });
+
+  return { mesAtualKey, fatAtual, diasComVenda, diasTotaisMes, ultimoDia, mediaDiaria, diasRestantes, projecaoTotal, porModalidade };
+}
+
+function renderProjecao(){
+  const card = document.getElementById('proj-card');
+  const proj = calcularProjecao();
+  if(!proj){ card.style.display='none'; return; }
+  card.style.display='block';
+
+  document.getElementById('proj-titulo').textContent = 'Projeção de fechamento — ' + mesLabel(proj.mesAtualKey);
+  document.getElementById('proj-valor').textContent = fmtBRLCent(proj.projecaoTotal);
+  document.getElementById('proj-atual').textContent = fmtBRLCent(proj.fatAtual);
+  document.getElementById('proj-dias-venda').textContent = proj.diasComVenda + ' de ' + proj.ultimoDia + ' dias corridos';
+  document.getElementById('proj-media-dia').textContent = fmtBRLCent(proj.mediaDiaria);
+  document.getElementById('proj-dias-restantes').textContent = proj.diasRestantes + ' de ' + proj.diasTotaisMes + ' dias no mês';
+  document.getElementById('proj-bar-fill').style.width = Math.min(100, (proj.ultimoDia/proj.diasTotaisMes*100)).toFixed(1)+'%';
+
+  const modBox = document.getElementById('proj-mod-breakdown');
+  modBox.innerHTML = '';
+  proj.porModalidade.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'proj-mod-item';
+    div.innerHTML = `
+      <span class="proj-mod-dot" style="background:${corModalidade(m.modalidade)}"></span>
+      <span class="proj-mod-nome">${m.modalidade}</span>
+      <span class="proj-mod-valor">${fmtBRLCent(m.projecaoTotal)}</span>
+      <span class="proj-mod-sub">${fmtBRLCent(m.fatAtual)} até agora</span>`;
+    modBox.appendChild(div);
+  });
+}
+
+function baseChartOpts(extra){
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ x:{grid:{display:false}}, y:{grid:{color:'#EFF0F7'}, ticks:{callback:v=>fmtNum(v)}} }
+  }, extra||{});
+}
+
+function renderChartMensal(data, meses){
+  const porMes = agregarPorMes(data);
+  const labels = meses.map(mesLabel);
+  const valores = meses.map(m=> porMes.has(m)? porMes.get(m).fat : 0);
+  const ctx = document.getElementById('chart-mensal');
+  if(CHARTS.mensal) CHARTS.mensal.destroy();
+  CHARTS.mensal = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ data:valores, backgroundColor:'#4F5FDE', borderRadius:6, maxBarThickness:46 }]},
+    options: baseChartOpts({
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=> fmtBRLCent(c.parsed.y) } } },
+      scales:{ x:{grid:{display:false}}, y:{grid:{color:'#EFF0F7'}, ticks:{callback:v=>fmtBRL(v)}} }
+    })
+  });
+}
+
+function renderChartModalidade(data){
+  const agg = agregarPorModalidade(data);
+  const labels = Array.from(agg.keys());
+  const valores = labels.map(l=>agg.get(l).fat);
+  const cores = labels.map(corModalidade);
+  const total = valores.reduce((a,b)=>a+b,0);
+  const ctx = document.getElementById('chart-modalidade');
+  if(CHARTS.modalidade) CHARTS.modalidade.destroy();
+  CHARTS.modalidade = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:valores, backgroundColor:cores, borderWidth:2, borderColor:'#fff' }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=> c.label+': '+fmtBRLCent(c.parsed) } } } }
+  });
+  const legend = document.getElementById('legend-modalidade');
+  legend.innerHTML='';
+  labels.sort((a,b)=>agg.get(b).fat-agg.get(a).fat).forEach(l=>{
+    const v = agg.get(l);
+    const pct = total? (v.fat/total*100):0;
+    const div = document.createElement('div');
+    div.className='legend-item';
+    div.innerHTML = `<span class="legend-dot" style="background:${corModalidade(l)}"></span><span class="lbl">${l}</span><span class="val">${fmtBRLCent(v.fat)} · ${fmtPct(pct)}</span>`;
+    legend.appendChild(div);
+  });
+}
+
+function renderChartLinhas(data){
+  const linhas = agregarPorLinha(data).sort((a,b)=>b.fat-a.fat).slice(0,12);
+  const ctx = document.getElementById('chart-linhas');
+  document.getElementById('badge-linhas').textContent = agregarPorLinha(data).length+' linhas no período';
+  if(CHARTS.linhas) CHARTS.linhas.destroy();
+  CHARTS.linhas = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: linhas.map(l=>l.linha),
+      datasets:[{ data: linhas.map(l=>l.fat), backgroundColor: linhas.map(l=>corModalidade(l.modalidade)), borderRadius:5, maxBarThickness:18 }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=> fmtBRLCent(c.parsed.x) } } },
+      scales:{ x:{grid:{color:'#EFF0F7'}, ticks:{callback:v=>fmtBRL(v)}}, y:{grid:{display:false}, ticks:{font:{size:11}}} }
+    }
+  });
+}
+
+function renderTabelaLinhas(data){
+  let linhas = agregarPorLinha(data);
+  const total = linhas.reduce((s,l)=>s+l.fat,0);
+  linhas.sort((a,b)=> SORT_LINHAS.dir==='desc' ? (b[SORT_LINHAS.key]>a[SORT_LINHAS.key]?1:-1) : (a[SORT_LINHAS.key]>b[SORT_LINHAS.key]?1:-1) );
+  const tbody = document.querySelector('#tabela-linhas tbody');
+  tbody.innerHTML='';
+  const max = linhas.length ? Math.max(...linhas.map(l=>l.fat)) : 1;
+  linhas.slice(0,60).forEach(l=>{
+    const pct = total? (l.fat/total*100):0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${l.linha}</td><td class="num">${fmtBRLCent(l.fat)}</td>
+      <td class="bar-cell"><div class="mini-bar-track"><div class="mini-bar-fill" style="width:${(l.fat/max*100).toFixed(1)}%; background:${corModalidade(l.modalidade)}"></div></div><div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;text-align:right;">${fmtPct(pct)}</div></td>`;
+    tbody.appendChild(tr);
+  });
+  if(!linhas.length){ tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>'; }
+}
+document.querySelectorAll('#tabela-linhas .th-sort').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(SORT_LINHAS.key===key) SORT_LINHAS.dir = SORT_LINHAS.dir==='desc'?'asc':'desc';
+    else { SORT_LINHAS.key=key; SORT_LINHAS.dir='desc'; }
+    renderTabelaLinhas(dadosFiltrados());
+  });
+});
+
+function renderChartModMes(data, meses){
+  const { mods, res } = agregarModalidadeMes(data, meses);
+  const ctx = document.getElementById('chart-mod-mes');
+  if(CHARTS.modMes) CHARTS.modMes.destroy();
+  CHARTS.modMes = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: meses.map(mesLabel),
+      datasets: mods.map(m=>({ label:m, data:res[m], backgroundColor:corModalidade(m), borderRadius:4, maxBarThickness:34 }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:9, font:{size:11.5}}}, tooltip:{ callbacks:{ label:c=> c.dataset.label+': '+fmtBRLCent(c.parsed.y) } } },
+      scales:{ x:{stacked:true, grid:{display:false}}, y:{stacked:true, grid:{color:'#EFF0F7'}, ticks:{callback:v=>fmtBRL(v)}} }
+    }
+  });
+}
+
+function renderTabelaVendedores(data){
+  const vend = agregarPorVendedor(data).slice(0,15);
+  const tbody = document.querySelector('#tabela-vendedores tbody');
+  tbody.innerHTML='';
+  vend.forEach(v=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${v.nome}</td><td class="num">${fmtBRLCent(v.fat)}</td><td class="num">${fmtNum(v.qtd)}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!vend.length){ tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>'; }
+}
+
+function renderPracaVendas(data){
+  const painel = document.getElementById('painel-praca-vendas');
+  const pracasNoDataset = new Set(RAW.map(r=>r.praca));
+  if(pracasNoDataset.size<=1){ painel.style.display='none'; return; }
+  painel.style.display='block';
+
+  const grupos = new Map();
+  data.forEach(r=>{
+    const key = r.praca || 'Não classificado';
+    if(!grupos.has(key)) grupos.set(key, {fat:0, qtd:0, n:0});
+    const o = grupos.get(key); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  const pracas = Array.from(grupos.keys()).sort();
+  const thead = document.getElementById('tabela-praca-vendas-head');
+  const tbody = document.getElementById('tabela-praca-vendas-body');
+
+  if(!pracas.length){
+    thead.innerHTML = '<th>Indicador</th><th class="col-consolidado">Consolidado</th>';
+    tbody.innerHTML = '<tr><td colspan="2" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>';
+    return;
+  }
+
+  thead.innerHTML = '<th>Indicador</th>' + pracas.map(p=>`<th>${p}</th>`).join('') + '<th class="col-consolidado">Consolidado</th>';
+
+  const total = {fat:0,qtd:0,n:0};
+  pracas.forEach(p=>{ const o=grupos.get(p); total.fat+=o.fat; total.qtd+=o.qtd; total.n+=o.n; });
+
+  const linhas = [
+    { label:'Faturamento', cell:o=>fmtBRLCent(o.fat) },
+    { label:'Quantidade', cell:o=>fmtNum(o.qtd)+' un.' },
+    { label:'Nº de vendas', cell:o=>fmtNum(o.n) },
+    { label:'Ticket médio', cell:o=>fmtBRLCent(o.n? o.fat/o.n : 0) }
+  ];
+  tbody.innerHTML = linhas.map(l=>{
+    const cells = pracas.map(p=>`<td>${l.cell(grupos.get(p))}</td>`).join('');
+    return `<tr><td>${l.label}</td>${cells}<td class="col-consolidado">${l.cell(total)}</td></tr>`;
+  }).join('');
+}
+
+function renderEmpresaVendas(data){
+  const grupos = new Map();
+  data.forEach(r=>{
+    const key = r.codEmpresa || '—';
+    if(!grupos.has(key)) grupos.set(key, {fat:0, qtd:0, n:0});
+    const o = grupos.get(key); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  const empresas = Array.from(grupos.keys()).sort();
+  const thead = document.getElementById('tabela-empresa-vendas-head');
+  const tbody = document.getElementById('tabela-empresa-vendas-body');
+
+  if(!empresas.length){
+    thead.innerHTML = '<th>Indicador</th><th class="col-consolidado">Consolidado</th>';
+    tbody.innerHTML = '<tr><td colspan="2" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>';
+    return;
+  }
+
+  thead.innerHTML = '<th>Indicador</th>' + empresas.map(e=>`<th>${e==='—'?'Sem código':'Empresa '+e}</th>`).join('') + '<th class="col-consolidado">Consolidado</th>';
+
+  const total = {fat:0,qtd:0,n:0};
+  empresas.forEach(e=>{ const o=grupos.get(e); total.fat+=o.fat; total.qtd+=o.qtd; total.n+=o.n; });
+
+  const linhas = [
+    { label:'Faturamento', cell:o=>fmtBRLCent(o.fat) },
+    { label:'Quantidade', cell:o=>fmtNum(o.qtd)+' un.' },
+    { label:'Nº de vendas', cell:o=>fmtNum(o.n) },
+    { label:'Ticket médio', cell:o=>fmtBRLCent(o.n? o.fat/o.n : 0) }
+  ];
+  tbody.innerHTML = linhas.map(l=>{
+    const cells = empresas.map(e=>`<td>${l.cell(grupos.get(e))}</td>`).join('');
+    return `<tr><td>${l.label}</td>${cells}<td class="col-consolidado">${l.cell(total)}</td></tr>`;
+  }).join('');
+}
+
+function renderTabelaDetalhe(data){
+  let rows = data.slice();
+  rows.sort((a,b)=>{
+    let va=a[SORT_DETALHE.key], vb=b[SORT_DETALHE.key];
+    if(SORT_DETALHE.key==='data'){ va=va?va.getTime():0; vb=vb?vb.getTime():0; }
+    if(typeof va==='string') va=norm(va);
+    if(typeof vb==='string') vb=norm(vb);
+    if(va<vb) return SORT_DETALHE.dir==='asc'?-1:1;
+    if(va>vb) return SORT_DETALHE.dir==='asc'?1:-1;
+    return 0;
+  });
+  const LIMITE = 400;
+  const tbody = document.getElementById('detalhe-body');
+  tbody.innerHTML='';
+  rows.slice(0, LIMITE).forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fmtData(r.data)}</td>
+      <td>${r.nota||'—'}</td>
+      <td>${r.vendedorNome}</td>
+      <td>${r.canal}</td>
+      <td>${r.cliente}</td>
+      <td>${r.descricao||''}</td>
+      <td>${r.linha}</td>
+      <td><span class="badge-modalidade badge-${modClass(r.modalidade)}">${r.modalidade}</span></td>
+      <td class="num">${fmtNum(r.quantidade)}</td>
+      <td class="num">${fmtBRLCent(r.valor)}</td>
+      <td class="num">${r.margem!==null ? fmtPct(r.margem) : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Nenhuma venda encontrada para os filtros atuais.</td></tr>'; }
+  document.getElementById('badge-detalhe').textContent = fmtNum(rows.length)+' registros';
+  document.getElementById('detalhe-count').textContent = rows.length>LIMITE ? `Exibindo ${LIMITE} de ${fmtNum(rows.length)} registros (exporte para ver todos)` : `${fmtNum(rows.length)} registros`;
+}
+document.querySelectorAll('#tabela-detalhe thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(SORT_DETALHE.key===key) SORT_DETALHE.dir = SORT_DETALHE.dir==='desc'?'asc':'desc';
+    else { SORT_DETALHE.key=key; SORT_DETALHE.dir='asc'; }
+    renderTabelaDetalhe(dadosFiltrados());
+  });
+});
+
+/* ============================================================
+   EXPORTAÇÃO
+============================================================ */
+document.getElementById('btn-export').addEventListener('click', exportarRelatorio);
+document.getElementById('btn-print').addEventListener('click', ()=>window.print());
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  RAW=[]; CHARTS={};
+  document.getElementById('tela-dashboard').style.display='none';
+  document.getElementById('tela-upload').style.display='flex';
+  fileInput.value='';
+  statusBox.style.display='none'; errorBox.style.display='none';
+});
+document.getElementById('btn-refresh-sheets').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btn-refresh-sheets');
+  const label = document.getElementById('btn-refresh-sheets-label');
+  const textoOriginal = label.textContent;
+  btn.disabled = true;
+  label.textContent = 'Atualizando…';
+  const ok = await carregarDoGoogleSheets(false);
+  if(!ok) alert('Não foi possível atualizar os dados agora. Tente novamente em instantes.');
+  btn.disabled = false;
+  label.textContent = textoOriginal;
+});
+
+function exportarRelatorio(){
+  const data = dadosFiltrados();
+  const meses = mesesDisponiveis().filter(m=>FILTROS.meses.has(m));
+  const wb = XLSX.utils.book_new();
+
+  // Resumo
+  const fat = data.reduce((s,r)=>s+r.valor,0);
+  const qtd = data.reduce((s,r)=>s+r.quantidade,0);
+  const n = data.length;
+  const resumo = [
+    ['Painel Acdelco — Grupo Jorlan'],
+    ['Relatório gerado em', new Date().toLocaleString('pt-BR')],
+    ['Arquivo de origem', META.filename],
+    [],
+    ['Filtros aplicados'],
+    ['Meses', meses.map(mesLabel).join(', ')],
+    ['Modalidades', Array.from(FILTROS.modalidades).join(', ')],
+    ['Canais', Array.from(FILTROS.canais).join(', ')],
+    ['Busca linha', FILTROS.buscaLinha || '(nenhuma)'],
+    [],
+    ['Indicadores'],
+    ['Faturamento total', fat],
+    ['Quantidade vendida', qtd],
+    ['Nº de vendas', n],
+    ['Ticket médio', n? fat/n:0]
+  ];
+  const wsResumo = XLSX.utils.aoa_to_sheet(resumo);
+  XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
+  // Por mês
+  const porMes = agregarPorMes(data);
+  const linhasMes = [['Mês','Faturamento','Quantidade','Nº de vendas','Ticket médio']];
+  meses.forEach(m=>{
+    const o = porMes.get(m) || {fat:0,qtd:0,n:0};
+    linhasMes.push([mesLabel(m), o.fat, o.qtd, o.n, o.n? o.fat/o.n:0]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasMes), 'Por Mes');
+
+  // Por modalidade
+  const porMod = agregarPorModalidade(data);
+  const linhasMod = [['Modalidade','Faturamento','Quantidade','Nº de vendas','% do faturamento']];
+  const totalMod = Array.from(porMod.values()).reduce((s,o)=>s+o.fat,0);
+  Array.from(porMod.entries()).sort((a,b)=>b[1].fat-a[1].fat).forEach(([m,o])=>{
+    linhasMod.push([m, o.fat, o.qtd, o.n, totalMod? (o.fat/totalMod*100):0]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasMod), 'Por Modalidade');
+
+  // Por linha de produto
+  const porLinha = agregarPorLinha(data).sort((a,b)=>b.fat-a.fat);
+  const totalLinha = porLinha.reduce((s,l)=>s+l.fat,0);
+  const linhasLinha = [['Linha de Produto','Modalidade','Faturamento','Quantidade','Nº de vendas','% do faturamento']];
+  porLinha.forEach(l=> linhasLinha.push([l.linha, l.modalidade, l.fat, l.qtd, l.n, totalLinha? (l.fat/totalLinha*100):0]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasLinha), 'Por Linha de Produto');
+
+  // Por vendedor
+  const porVend = agregarPorVendedor(data);
+  const linhasVend = [['Vendedor','Faturamento','Quantidade','Nº de vendas']];
+  porVend.forEach(v=> linhasVend.push([v.nome, v.fat, v.qtd, v.n]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasVend), 'Por Vendedor');
+
+  // Por empresa/loja (com linha Consolidado)
+  const porEmpresaMap = new Map();
+  data.forEach(r=>{
+    const key = r.codEmpresa || 'Sem código';
+    if(!porEmpresaMap.has(key)) porEmpresaMap.set(key, {fat:0, qtd:0, n:0});
+    const o = porEmpresaMap.get(key); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  const linhasEmp = [['Empresa','Faturamento','Quantidade','Nº de vendas','Ticket médio']];
+  const totalEmp = {fat:0,qtd:0,n:0};
+  Array.from(porEmpresaMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([e,o])=>{
+    totalEmp.fat+=o.fat; totalEmp.qtd+=o.qtd; totalEmp.n+=o.n;
+    linhasEmp.push(['Empresa '+e, o.fat, o.qtd, o.n, o.n? o.fat/o.n:0]);
+  });
+  linhasEmp.push(['Consolidado', totalEmp.fat, totalEmp.qtd, totalEmp.n, totalEmp.n? totalEmp.fat/totalEmp.n:0]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasEmp), 'Por Empresa');
+
+  // Por praça (com linha Consolidado)
+  const porPracaMap = new Map();
+  data.forEach(r=>{
+    const key = r.praca || 'Não classificado';
+    if(!porPracaMap.has(key)) porPracaMap.set(key, {fat:0, qtd:0, n:0});
+    const o = porPracaMap.get(key); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+  });
+  const linhasPraca = [['Praça','Faturamento','Quantidade','Nº de vendas','Ticket médio']];
+  const totalPraca = {fat:0,qtd:0,n:0};
+  Array.from(porPracaMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([p,o])=>{
+    totalPraca.fat+=o.fat; totalPraca.qtd+=o.qtd; totalPraca.n+=o.n;
+    linhasPraca.push([p, o.fat, o.qtd, o.n, o.n? o.fat/o.n:0]);
+  });
+  linhasPraca.push(['Consolidado', totalPraca.fat, totalPraca.qtd, totalPraca.n, totalPraca.n? totalPraca.fat/totalPraca.n:0]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasPraca), 'Por Praça');
+
+  // Detalhado
+  const linhasDet = [['Data','Nota','Vendedor','Canal','Praça','Loja/Região','Cliente','Código Item','Descrição','Linha','Modalidade','Quantidade','Valor','Margem %']];
+  data.forEach(r=> linhasDet.push([ fmtData(r.data), r.nota, r.vendedorNome, r.canal, r.praca, r.loja, r.cliente, r.codItem, r.descricao, r.linha, r.modalidade, r.quantidade, r.valor, r.margem ]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasDet), 'Detalhado');
+
+  const dataStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Relatorio_Acdelco_${dataStr}.xlsx`);
+}
+
+/* ============================================================
+   NAVEGAÇÃO POR ABAS
+============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='estoque'){
+      document.getElementById('stock-seg-warning').style.display = SEG_MAP ? 'none' : 'block';
+    }
+  });
+});
+
+/* ============================================================
+   ESTOQUE — LEITURA DO CSV
+============================================================ */
+const stockDropzone = document.getElementById('stock-dropzone');
+const stockFileInput = document.getElementById('stock-file-input');
+const stockStatusBox = document.getElementById('stock-upload-status');
+const stockStatusText = document.getElementById('stock-upload-status-text');
+const stockErrorBox = document.getElementById('stock-upload-error');
+
+stockDropzone.addEventListener('click', ()=>stockFileInput.click());
+stockDropzone.addEventListener('dragover', e=>{ e.preventDefault(); stockDropzone.classList.add('drag'); });
+stockDropzone.addEventListener('dragleave', ()=> stockDropzone.classList.remove('drag'));
+stockDropzone.addEventListener('drop', e=>{
+  e.preventDefault(); stockDropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleStockFile(e.dataTransfer.files[0]);
+});
+stockFileInput.addEventListener('change', e=>{ if(e.target.files.length) handleStockFile(e.target.files[0]); });
+
+function showStockError(msg){ stockErrorBox.style.display='block'; stockErrorBox.textContent=msg; stockStatusBox.style.display='none'; }
+function showStockStatus(msg){ stockErrorBox.style.display='none'; stockStatusBox.style.display='flex'; stockStatusText.textContent=msg; }
+
+function handleStockFile(file){
+  showStockStatus('Lendo base de estoque…');
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const decoder = new TextDecoder('windows-1252');
+      let text = decoder.decode(new Uint8Array(e.target.result));
+      processStockCSV(text, file.name);
+    }catch(err){
+      console.error(err);
+      showStockError('Não foi possível ler o arquivo. Verifique se é um .csv válido. ('+err.message+')');
+    }
+  };
+  reader.onerror = ()=> showStockError('Falha ao carregar o arquivo.');
+  reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text, delim){
+  const linhas = text.split(/\r\n|\n|\r/).filter(l=>l.length>0);
+  return linhas.map(l=>l.split(delim));
+}
+
+function str(v){ return (v===null||v===undefined) ? '' : String(v).trim(); }
+
+// detecta se uma aba (pelas colunas do cabeçalho) parece ser uma base de Estoque
+function pareceAbaEstoque(headers){
+  const hs = headers.map(norm);
+  const temItem = hs.some(h=> h.includes('coditem') || (h.includes('cod') && h.includes('item')));
+  const temQtde = hs.some(h=> h.includes('qtde'));
+  const temCurva = hs.some(h=> h==='curva');
+  return temItem && temQtde && temCurva;
+}
+
+// monta a lista de itens de estoque Acdelco (cruzando com SEG_MAP) a partir de um cabeçalho + linhas genéricos,
+// usado tanto para o CSV separado quanto para uma aba de Estoque embutida na planilha de Vendas
+function montarItensEstoque(headers, rows){
+  const idx = (testFn)=> findCol(headers, testFn);
+
+  const cEmpresa = idx(h=>h.includes('empresa'));
+  const cCodItem = idx(h=>h.includes('coditem') || (h.includes('cod') && h.includes('item')));
+  const cDescricao = idx(h=>h.includes('descricao'));
+  const cQtde = idx(h=>h.includes('qtde'));
+  const cCusto = idx(h=>h.includes('cst') && h.includes('ctbil') && !h.includes('for'));
+  const cPvenFor = idx(h=>h.includes('pven') && h.includes('for'));
+  const cCurva = idx(h=>h==='curva');
+  const cUltCompra = idx(h=>h.includes('ultima') && h.includes('compra'));
+  const cUltVenda = idx(h=>h.includes('ultima') && h.includes('venda'));
+  const cGrupo = idx(h=>h==='grupo');
+  const cSubgrupo = idx(h=>h.includes('subgrupo'));
+  const cLocacao = idx(h=>h.includes('locacao'));
+  const cM = [1,2,3,4,5,6].map(n=> idx(h=>h==='m'+n));
+
+  if(cCodItem<0 || cQtde<0){
+    return { ok:false, motivo:'Não encontrei as colunas de Código do Item e Quantidade. Verifique o cabeçalho da base de estoque.' };
+  }
+  if(!SEG_MAP){
+    return { ok:false, motivo:'Carregue primeiro a planilha de Vendas (aba Vendas) para que a base de Segmento Acdelco esteja disponível — só os códigos cadastrados nela entram nesta análise.' };
+  }
+
+  const dados = [];
+  rows.forEach(r=>{
+    if(!r || r[cCodItem]===null || r[cCodItem]===undefined || r[cCodItem]==='') return;
+    const codItem = str(r[cCodItem]);
+    if(!codItem) return;
+
+    const grupo = cGrupo>=0 ? str(r[cGrupo]) : '';
+    const seg = SEG_MAP.get(codItem);
+    if(!seg) return; // só entram itens cujo código consta na aba Segmento Acdelco
+
+    const mVals = cM.map(c=> c>=0 ? parseBR(r[c]) : 0);
+    const mediaMensal = mVals.reduce((a,b)=>a+b,0)/6;
+    const qtde = parseBR(r[cQtde]);
+    const custoUnit = cCusto>=0 ? parseBR(r[cCusto]) : 0;
+
+    dados.push({
+      empresa: cEmpresa>=0 ? str(r[cEmpresa]) : '',
+      praca: pracaDoEmpresa(cEmpresa>=0 ? str(r[cEmpresa]) : ''),
+      codItem,
+      descricao: cDescricao>=0 ? str(r[cDescricao]) : '',
+      qtde,
+      custoUnit,
+      valorEstoque: qtde*custoUnit,
+      precoVenda: cPvenFor>=0 ? parseBR(r[cPvenFor]) : 0,
+      curva: cCurva>=0 && r[cCurva] ? str(r[cCurva]).toUpperCase() : '—',
+      ultimaCompra: cUltCompra>=0 ? parseDataBR(r[cUltCompra]) : null,
+      ultimaVenda: cUltVenda>=0 ? parseDataBR(r[cUltVenda]) : null,
+      mediaMensal,
+      m: mVals,
+      grupo, subgrupo: cSubgrupo>=0 ? str(r[cSubgrupo]) : '',
+      locacao: cLocacao>=0 ? str(r[cLocacao]) : '',
+      modalidade: seg.modalidade, linha: seg.linha, aplicacao: seg.aplicacao || '',
+      temSegmento: true
+    });
+  });
+
+  if(dados.length===0){
+    return { ok:false, motivo:'Nenhum item tem código cadastrado na aba Segmento Acdelco. Verifique se os códigos batem entre as duas bases.' };
+  }
+  return { ok:true, itens: dados };
+}
+
+function processStockCSV(text, filename){
+  // detecta delimitador (ponto e vírgula é o padrão do sistema, mas aceita vírgula também)
+  const primeiraLinha = text.split(/\r\n|\n|\r/)[0] || '';
+  const delim = (primeiraLinha.split(';').length > primeiraLinha.split(',').length) ? ';' : ',';
+  const linhas = parseCSV(text, delim);
+  if(linhas.length<2){ showStockError('O arquivo parece vazio.'); return; }
+
+  const headers = linhas[0].map(h=>h.replace(/^\uFEFF/,''));
+  const resultado = montarItensEstoque(headers, linhas.slice(1));
+  if(!resultado.ok){ showStockError(resultado.motivo); return; }
+
+  STOCK_RAW = resultado.itens;
+  document.getElementById('stock-upload-card').style.display='none';
+  document.getElementById('stock-dashboard').style.display='block';
+  document.getElementById('stock-seg-warning').style.display = SEG_MAP ? 'none' : 'block';
+  montarFiltrosEstoque();
+  renderEstoqueTudo();
+}
+
+/* ============================================================
+   ESTOQUE — FILTROS
+============================================================ */
+function situacaoGiro(item){
+  if(item.mediaMensal<=0) return 'Sem giro';
+  if(item.mediaMensal<1) return 'Giro baixo';
+  return 'Giro normal';
+}
+function classeGiro(s){
+  if(s==='Sem giro') return 'sem';
+  if(s==='Giro baixo') return 'baixo';
+  return 'alto';
+}
+function classeCurva(c){
+  const n=(c||'').toUpperCase();
+  if(n==='A') return 'a'; if(n==='B') return 'b'; if(n==='C') return 'c';
+  if(n==='D') return 'd'; if(n==='K') return 'k';
+  return 'outros';
+}
+
+// une as linhas de um mesmo código de item entre empresas/lojas diferentes, somando
+// estoque e vendas — evita mostrar o mesmo item duplicado quando ele existe em mais de uma empresa
+function consolidarPorItem(rows){
+  const map = new Map();
+  rows.forEach(r=>{
+    if(!map.has(r.codItem)){
+      map.set(r.codItem, {
+        codItem: r.codItem, descricao: r.descricao, aplicacao: r.aplicacao, linha: r.linha,
+        modalidade: r.modalidade, grupo: r.grupo, subgrupo: r.subgrupo,
+        qtde:0, valorEstoque:0, mediaMensal:0, m:[0,0,0,0,0,0],
+        precoVenda: r.precoVenda, curva: r.curva, curvaQtdeRef:-1,
+        ultimaVenda: null, ultimaCompra: null,
+        empresas: [], locacoes: []
+      });
+    }
+    const o = map.get(r.codItem);
+    o.qtde += r.qtde;
+    o.valorEstoque += r.valorEstoque;
+    o.mediaMensal += r.mediaMensal;
+    r.m.forEach((v,i)=> o.m[i]+=v);
+    if(r.qtde > o.curvaQtdeRef){ o.curva = r.curva; o.curvaQtdeRef = r.qtde; } // curva do maior estoque (dominante)
+    if(r.precoVenda>0) o.precoVenda = r.precoVenda;
+    if(r.ultimaVenda && (!o.ultimaVenda || r.ultimaVenda>o.ultimaVenda)) o.ultimaVenda = r.ultimaVenda;
+    if(r.ultimaCompra && (!o.ultimaCompra || r.ultimaCompra>o.ultimaCompra)) o.ultimaCompra = r.ultimaCompra;
+    if(r.empresa && !o.empresas.includes(r.empresa)) o.empresas.push(r.empresa);
+    if(r.locacao && !o.locacoes.includes(r.locacao)) o.locacoes.push(r.locacao);
+  });
+  const lista = Array.from(map.values());
+  lista.forEach(o=>{ o.custoUnit = o.qtde>0 ? o.valorEstoque/o.qtde : 0; });
+  return lista;
+}
+
+function montarFiltrosEstoque(){
+  const modalidades = Array.from(new Set(STOCK_RAW.map(r=>r.modalidade))).sort();
+  STOCK_FILTROS.modalidades = new Set(modalidades);
+  const cMod = document.getElementById('stock-filtro-modalidade');
+  cMod.innerHTML='';
+  modalidades.forEach(m=>{
+    const p = document.createElement('div');
+    p.className='pill active mod-'+modClass(m); p.textContent=m;
+    p.onclick=()=>{ togglePill(STOCK_FILTROS.modalidades, m, p); renderEstoqueTudo(); };
+    cMod.appendChild(p);
+  });
+
+  const curvas = Array.from(new Set(STOCK_RAW.map(r=>r.curva))).sort();
+  STOCK_FILTROS.curvas = new Set(curvas);
+  const cCur = document.getElementById('stock-filtro-curva');
+  cCur.innerHTML='';
+  curvas.forEach(c=>{
+    const p = document.createElement('div');
+    p.className='pill active'; p.textContent='Curva '+c;
+    p.onclick=()=>{ togglePill(STOCK_FILTROS.curvas, c, p); renderEstoqueTudo(); };
+    cCur.appendChild(p);
+  });
+
+  const curvaSelect = document.getElementById('stock-curva-select');
+  curvaSelect.innerHTML = '<option value="">Todas as curvas</option>' + curvas.map(c=>`<option value="${c}">Curva ${c}</option>`).join('');
+
+  const giros = ['Giro normal','Giro baixo','Sem giro'];
+  STOCK_FILTROS.giros = new Set(giros);
+  const cGiro = document.getElementById('stock-filtro-giro');
+  cGiro.innerHTML='';
+  giros.forEach(g=>{
+    const p = document.createElement('div');
+    p.className='pill active'; p.textContent=g;
+    p.onclick=()=>{ togglePill(STOCK_FILTROS.giros, g, p); renderEstoqueTudo(); };
+    cGiro.appendChild(p);
+  });
+
+  const empresas = Array.from(new Set(STOCK_RAW.map(r=>r.empresa).filter(Boolean))).sort();
+  STOCK_FILTROS.empresas = new Set(empresas);
+  if(empresas.length>1){
+    document.getElementById('stock-grupo-empresa').style.display='flex';
+    const cEmp = document.getElementById('stock-filtro-empresa');
+    cEmp.innerHTML='';
+    empresas.forEach(emp=>{
+      const p = document.createElement('div');
+      p.className='pill active'; p.textContent='Empresa '+emp;
+      p.onclick=()=>{ togglePill(STOCK_FILTROS.empresas, emp, p); renderEstoqueTudo(); };
+      cEmp.appendChild(p);
+    });
+  } else {
+    document.getElementById('stock-grupo-empresa').style.display='none';
+  }
+
+  const pracas = Array.from(new Set(STOCK_RAW.map(r=>r.praca))).sort();
+  STOCK_FILTROS.pracas = new Set(pracas);
+  if(pracas.length>1){
+    document.getElementById('stock-grupo-praca').style.display='flex';
+    const cPraca = document.getElementById('stock-filtro-praca');
+    cPraca.innerHTML='';
+    pracas.forEach(pc=>{
+      const p = document.createElement('div');
+      p.className='pill active'; p.textContent=pc;
+      p.style.background = corPraca(pc); p.style.borderColor = corPraca(pc); p.style.color = '#fff';
+      p.onclick=()=>{
+        togglePill(STOCK_FILTROS.pracas, pc, p);
+        p.style.background = STOCK_FILTROS.pracas.has(pc) ? corPraca(pc) : '';
+        p.style.color = STOCK_FILTROS.pracas.has(pc) ? '#fff' : '';
+        renderEstoqueTudo();
+      };
+      cPraca.appendChild(p);
+    });
+  } else {
+    document.getElementById('stock-grupo-praca').style.display='none';
+  }
+
+  document.getElementById('stock-busca').value='';
+  document.getElementById('stock-busca').oninput = e=>{ STOCK_FILTROS.busca = norm(e.target.value); renderEstoqueTudo(); };
+  document.getElementById('stock-btn-limpar').onclick = ()=>{ montarFiltrosEstoque(); renderEstoqueTudo(); };
+}
+
+function estoqueFiltrado(){
+  return STOCK_RAW.filter(r=>
+    STOCK_FILTROS.modalidades.has(r.modalidade) &&
+    STOCK_FILTROS.curvas.has(r.curva) &&
+    STOCK_FILTROS.giros.has(situacaoGiro(r)) &&
+    STOCK_FILTROS.empresas.has(r.empresa) &&
+    STOCK_FILTROS.pracas.has(r.praca) &&
+    (!STOCK_FILTROS.busca || norm(r.linha).includes(STOCK_FILTROS.busca) || norm(r.descricao).includes(STOCK_FILTROS.busca) || norm(r.aplicacao).includes(STOCK_FILTROS.busca))
+  );
+}
+
+/* ============================================================
+   ESTOQUE — RENDER
+============================================================ */
+function renderEstoqueTudo(){
+  const data = estoqueFiltrado();
+  const consolidado = consolidarPorItem(data);
+  tentar('KPIs estoque', ()=>renderEstoqueKPIs(consolidado));
+  if(typeof Chart !== 'undefined'){
+    tentar('gráfico estoque modalidade', ()=>renderEstoqueChartModalidade(consolidado));
+    tentar('gráfico curva', ()=>renderEstoqueChartCurva(consolidado));
+  }
+  tentar('mais vendidos', ()=>renderMaisVendidos(consolidado));
+  tentar('menos vendidos', ()=>renderMenosVendidos(consolidado));
+  tentar('praça estoque', ()=>renderPracaEstoque(data));
+  tentar('empresa/loja estoque', ()=>renderEmpresaEstoque(data));
+  tentar('catálogo', ()=>renderCatalogo(consolidado));
+}
+
+function renderEstoqueKPIs(data){
+  const valorTotal = data.reduce((s,r)=>s+r.valorEstoque,0);
+  const qtdeTotal = data.reduce((s,r)=>s+r.qtde,0);
+  const semGiro = data.filter(r=>r.mediaMensal<=0);
+  const valorSemGiro = semGiro.reduce((s,r)=>s+r.valorEstoque,0);
+
+  document.getElementById('stock-kpi-skus').textContent = fmtNum(data.length);
+  document.getElementById('stock-kpi-skus-sub').textContent = 'códigos distintos em estoque';
+  document.getElementById('stock-kpi-valor').textContent = fmtBRLCent(valorTotal);
+  document.getElementById('stock-kpi-qtde').textContent = fmtNum(qtdeTotal)+' un.';
+  document.getElementById('stock-kpi-semgiro').textContent = fmtNum(semGiro.length);
+  document.getElementById('stock-kpi-semgiro-sub').textContent = fmtBRLCent(valorSemGiro)+' parados em estoque';
+}
+
+function renderEstoqueChartModalidade(data){
+  const map = new Map();
+  data.forEach(r=>{
+    if(!map.has(r.modalidade)) map.set(r.modalidade, 0);
+    map.set(r.modalidade, map.get(r.modalidade)+r.valorEstoque);
+  });
+  const labels = Array.from(map.keys());
+  const valores = labels.map(l=>map.get(l));
+  const cores = labels.map(corModalidade);
+  const total = valores.reduce((a,b)=>a+b,0);
+  const ctx = document.getElementById('stock-chart-modalidade');
+  if(STOCK_CHARTS.modalidade) STOCK_CHARTS.modalidade.destroy();
+  STOCK_CHARTS.modalidade = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:valores, backgroundColor:cores, borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=> c.label+': '+fmtBRLCent(c.parsed) } } } }
+  });
+  const legend = document.getElementById('stock-legend-modalidade');
+  legend.innerHTML='';
+  labels.sort((a,b)=>map.get(b)-map.get(a)).forEach(l=>{
+    const v = map.get(l); const pct = total? v/total*100 : 0;
+    const div = document.createElement('div');
+    div.className='legend-item';
+    div.innerHTML = `<span class="legend-dot" style="background:${corModalidade(l)}"></span><span class="lbl">${l}</span><span class="val">${fmtBRLCent(v)} · ${fmtPct(pct)}</span>`;
+    legend.appendChild(div);
+  });
+}
+
+function renderEstoqueChartCurva(data){
+  const ordem = ['A','B','C','D','K'];
+  const map = new Map();
+  data.forEach(r=>{ map.set(r.curva, (map.get(r.curva)||0)+1); });
+  const labels = ordem.filter(o=>map.has(o)).concat(Array.from(map.keys()).filter(k=>!ordem.includes(k)));
+  const valores = labels.map(l=>map.get(l));
+  const cores = { A:'#1E7A3D', B:'#C9972E', C:'#D97B1F', D:'#B03A2E', K:'#7A1F1F' };
+  const ctx = document.getElementById('stock-chart-curva');
+  if(STOCK_CHARTS.curva) STOCK_CHARTS.curva.destroy();
+  STOCK_CHARTS.curva = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: labels.map(l=>'Curva '+l), datasets:[{ data: valores, backgroundColor: labels.map(l=>cores[l]||'#8B90A8'), borderRadius:6, maxBarThickness:50 }] },
+    options: baseChartOpts({ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>fmtNum(c.parsed.y)+' itens'}}} })
+  });
+}
+
+function renderMaisVendidos(data){
+  const todos = data.filter(r=>r.mediaMensal>0).sort((a,b)=>b.mediaMensal-a.mediaMensal);
+  const lista = todos.slice(0,20);
+  const tbody = document.querySelector('#stock-tabela-maisvendidos tbody');
+  tbody.innerHTML='';
+  lista.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.descricao||r.codItem}<div style="font-size:10.5px;color:var(--text-muted);">${r.codItem} · ${r.linha}</div></td>
+      <td class="num">${r.mediaMensal.toLocaleString('pt-BR',{maximumFractionDigits:1})}</td>
+      <td class="num">${fmtNum(r.qtde)}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!lista.length){ tbody.innerHTML='<tr><td colspan="3" class="empty-state">Nenhum item com venda nos últimos 6 meses para os filtros atuais.</td></tr>'; }
+  document.getElementById('stock-badge-maisvendidos').textContent = fmtNum(todos.length)+' itens com giro';
+}
+
+function renderMenosVendidos(data){
+  const todos = data.slice().sort((a,b)=>a.mediaMensal-b.mediaMensal);
+  const lista = todos.slice(0,20);
+  const tbody = document.querySelector('#stock-tabela-parados tbody');
+  tbody.innerHTML='';
+  lista.forEach(r=>{
+    const ultVenda = r.ultimaVenda ? fmtData(r.ultimaVenda) : 'sem registro';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.descricao||r.codItem}<div style="font-size:10.5px;color:var(--text-muted);">${r.codItem} · curva ${r.curva} · última venda: ${ultVenda}</div></td>
+      <td class="num">${r.mediaMensal.toLocaleString('pt-BR',{maximumFractionDigits:1})}</td>
+      <td class="num">${fmtNum(r.qtde)}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!lista.length){ tbody.innerHTML='<tr><td colspan="3" class="empty-state">Nenhum item para os filtros atuais.</td></tr>'; }
+  const curvaCDK = data.filter(r=>['C','D','K'].includes((r.curva||'').toUpperCase()));
+  document.getElementById('stock-badge-parados').textContent = fmtNum(curvaCDK.length)+' em curva C/D/K';
+}
+
+function renderPracaEstoque(data){
+  const painel = document.getElementById('painel-praca-estoque');
+  const pracasNoDataset = new Set(STOCK_RAW.map(r=>r.praca));
+  if(pracasNoDataset.size<=1){ painel.style.display='none'; return; }
+  painel.style.display='block';
+
+  const grupos = new Map();
+  data.forEach(r=>{
+    const key = r.praca || 'Não classificado';
+    if(!grupos.has(key)) grupos.set(key, {n:0, qtde:0, valor:0, semGiro:0, valorParado:0});
+    const o = grupos.get(key);
+    o.n++; o.qtde+=r.qtde; o.valor+=r.valorEstoque;
+    if(r.mediaMensal<=0){ o.semGiro++; o.valorParado+=r.valorEstoque; }
+  });
+  const pracas = Array.from(grupos.keys()).sort();
+  const thead = document.getElementById('tabela-praca-estoque-head');
+  const tbody = document.getElementById('tabela-praca-estoque-body');
+
+  if(!pracas.length){
+    thead.innerHTML = '<th>Indicador</th><th class="col-consolidado">Consolidado</th>';
+    tbody.innerHTML = '<tr><td colspan="2" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>';
+    return;
+  }
+
+  thead.innerHTML = '<th>Indicador</th>' + pracas.map(p=>`<th>${p}</th>`).join('') + '<th class="col-consolidado">Consolidado</th>';
+
+  const total = {n:0, qtde:0, valor:0, semGiro:0, valorParado:0};
+  pracas.forEach(p=>{ const o=grupos.get(p); total.n+=o.n; total.qtde+=o.qtde; total.valor+=o.valor; total.semGiro+=o.semGiro; total.valorParado+=o.valorParado; });
+
+  const linhasPraca = [
+    { label:'Itens (SKUs)', cell:o=>fmtNum(o.n) },
+    { label:'Quantidade', cell:o=>fmtNum(o.qtde)+' un.' },
+    { label:'Valor em estoque', cell:o=>fmtBRLCent(o.valor) },
+    { label:'Itens sem giro', cell:o=>fmtNum(o.semGiro) },
+    { label:'Valor parado', cell:o=>fmtBRLCent(o.valorParado) }
+  ];
+  tbody.innerHTML = linhasPraca.map(l=>{
+    const cells = pracas.map(p=>`<td>${l.cell(grupos.get(p))}</td>`).join('');
+    return `<tr><td>${l.label}</td>${cells}<td class="col-consolidado">${l.cell(total)}</td></tr>`;
+  }).join('');
+}
+
+function renderEmpresaEstoque(data){
+  const grupos = new Map();
+  data.forEach(r=>{
+    const key = r.empresa || '—';
+    if(!grupos.has(key)) grupos.set(key, {n:0, qtde:0, valor:0, semGiro:0, valorParado:0});
+    const o = grupos.get(key);
+    o.n++; o.qtde+=r.qtde; o.valor+=r.valorEstoque;
+    if(r.mediaMensal<=0){ o.semGiro++; o.valorParado+=r.valorEstoque; }
+  });
+  const empresas = Array.from(grupos.keys()).sort();
+  const thead = document.getElementById('tabela-empresa-estoque-head');
+  const tbody = document.getElementById('tabela-empresa-estoque-body');
+
+  if(!empresas.length){
+    thead.innerHTML = '<th>Indicador</th><th class="col-consolidado">Consolidado</th>';
+    tbody.innerHTML = '<tr><td colspan="2" class="empty-state">Nenhum resultado para os filtros atuais.</td></tr>';
+    return;
+  }
+
+  thead.innerHTML = '<th>Indicador</th>' + empresas.map(e=>`<th>${e==='—'?'Sem código':'Empresa '+e}</th>`).join('') + '<th class="col-consolidado">Consolidado</th>';
+
+  const total = {n:0, qtde:0, valor:0, semGiro:0, valorParado:0};
+  empresas.forEach(e=>{ const o=grupos.get(e); total.n+=o.n; total.qtde+=o.qtde; total.valor+=o.valor; total.semGiro+=o.semGiro; total.valorParado+=o.valorParado; });
+
+  const linhas = [
+    { label:'Itens (SKUs)', cell:o=>fmtNum(o.n) },
+    { label:'Quantidade', cell:o=>fmtNum(o.qtde)+' un.' },
+    { label:'Valor em estoque', cell:o=>fmtBRLCent(o.valor) },
+    { label:'Itens sem giro', cell:o=>fmtNum(o.semGiro) },
+    { label:'Valor parado', cell:o=>fmtBRLCent(o.valorParado) }
+  ];
+  tbody.innerHTML = linhas.map(l=>{
+    const cells = empresas.map(e=>`<td>${l.cell(grupos.get(e))}</td>`).join('');
+    return `<tr><td>${l.label}</td>${cells}<td class="col-consolidado">${l.cell(total)}</td></tr>`;
+  }).join('');
+}
+
+function renderCatalogo(data){
+  let lista = data.slice();
+  lista.sort((a,b)=>{
+    let va = SORT_key_val(a, STOCK_SORT_CATALOGO.key), vb = SORT_key_val(b, STOCK_SORT_CATALOGO.key);
+    if(typeof va==='string') va=norm(va);
+    if(typeof vb==='string') vb=norm(vb);
+    if(va<vb) return STOCK_SORT_CATALOGO.dir==='asc'?-1:1;
+    if(va>vb) return STOCK_SORT_CATALOGO.dir==='asc'?1:-1;
+    return 0;
+  });
+  const LIMITE = 500;
+  const tbody = document.getElementById('stock-catalogo-body');
+  tbody.innerHTML='';
+  lista.slice(0,LIMITE).forEach(r=>{
+    const cobertura = r.mediaMensal>0 ? (r.qtde/r.mediaMensal) : null;
+    const coberturaTxt = cobertura===null ? (r.qtde>0 ? 'sem giro' : '—') : fmtNum(cobertura)+' meses';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.codItem}</td>
+      <td>${r.descricao}</td>
+      <td>${r.aplicacao||'—'}</td>
+      <td>${r.linha}</td>
+      <td><span class="badge-modalidade badge-${modClass(r.modalidade)}">${r.modalidade}</span></td>
+      <td><span class="badge-modalidade badge-curva-${classeCurva(r.curva)}">${r.curva}</span></td>
+      <td class="num">${fmtNum(r.qtde)}</td>
+      <td class="num">${r.mediaMensal? r.mediaMensal.toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}</td>
+      <td class="num">${coberturaTxt}</td>
+      <td class="num">${fmtBRLCent(r.precoVenda)}</td>
+      <td>${r.empresas.join(', ')}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(!lista.length){ tbody.innerHTML='<tr><td colspan="11" class="empty-state">Nenhum item para os filtros atuais.</td></tr>'; }
+  document.getElementById('stock-badge-catalogo').textContent = fmtNum(lista.length)+' itens';
+  document.getElementById('stock-catalogo-count').textContent = lista.length>LIMITE ? `Exibindo ${LIMITE} de ${fmtNum(lista.length)} itens (exporte para ver todos)` : `${fmtNum(lista.length)} itens`;
+}
+function SORT_key_val(r,key){
+  if(key==='cobertura') return r.mediaMensal>0 ? r.qtde/r.mediaMensal : -1;
+  return r[key];
+}
+document.querySelectorAll('#stock-tabela-catalogo thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(STOCK_SORT_CATALOGO.key===key) STOCK_SORT_CATALOGO.dir = STOCK_SORT_CATALOGO.dir==='desc'?'asc':'desc';
+    else { STOCK_SORT_CATALOGO.key=key; STOCK_SORT_CATALOGO.dir='desc'; }
+    renderCatalogo(consolidarPorItem(estoqueFiltrado()));
+  });
+});
+
+/* ============================================================
+   ESTOQUE — EXPORTAÇÃO
+============================================================ */
+document.getElementById('stock-btn-export').addEventListener('click', exportarEstoque);
+document.getElementById('stock-btn-export-mais').addEventListener('click', exportarMaisVendidosTop100);
+document.getElementById('stock-btn-export-menos').addEventListener('click', exportarMenosVendidosCurvaCDK);
+document.getElementById('stock-btn-export-curva').addEventListener('click', exportarPorCurva);
+
+// base para as exportações dedicadas: respeita modalidade/empresa/busca ativos na tela,
+// mas ignora os filtros de curva e giro — cada exportação define sua própria seleção de curva/ranking
+function estoqueBaseParaExport(){
+  return STOCK_RAW.filter(r=>
+    STOCK_FILTROS.modalidades.has(r.modalidade) &&
+    STOCK_FILTROS.empresas.has(r.empresa) &&
+    STOCK_FILTROS.pracas.has(r.praca) &&
+    (!STOCK_FILTROS.busca || norm(r.linha).includes(STOCK_FILTROS.busca) || norm(r.descricao).includes(STOCK_FILTROS.busca) || norm(r.aplicacao).includes(STOCK_FILTROS.busca))
+  );
+}
+
+// monta cabeçalho + linhas de uma lista de itens consolidados, incluindo M1-M6
+function linhasCatalogoComM(lista){
+  const header = ['Código','Descrição','Aplicação','Linha','Modalidade','Curva','Estoque','Custo unit. médio','Valor em estoque','Preço venda','Média/mês','M1','M2','M3','M4','M5','M6','Cobertura (meses)','Última venda','Última compra','Empresas'];
+  const rows = lista.map(r=>[
+    r.codItem, r.descricao, r.aplicacao, r.linha, r.modalidade, r.curva, r.qtde, r.custoUnit, r.valorEstoque, r.precoVenda, r.mediaMensal,
+    r.m[0], r.m[1], r.m[2], r.m[3], r.m[4], r.m[5],
+    r.mediaMensal ? r.qtde/r.mediaMensal : '',
+    r.ultimaVenda ? fmtData(r.ultimaVenda) : '', r.ultimaCompra ? fmtData(r.ultimaCompra) : '',
+    r.empresas.join(', ')
+  ]);
+  return [header, ...rows];
+}
+
+function exportarMaisVendidosTop100(){
+  const consolidado = consolidarPorItem(estoqueBaseParaExport());
+  const lista = consolidado.filter(r=>r.mediaMensal>0).sort((a,b)=>b.mediaMensal-a.mediaMensal).slice(0,100);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCatalogoComM(lista)), 'Mais Vendidos Top100');
+  XLSX.writeFile(wb, `Mais_Vendidos_Top100_Acdelco_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportarMenosVendidosCurvaCDK(){
+  const consolidado = consolidarPorItem(estoqueBaseParaExport());
+  const lista = consolidado.filter(r=>['C','D','K'].includes((r.curva||'').toUpperCase())).sort((a,b)=>a.mediaMensal-b.mediaMensal);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCatalogoComM(lista)), 'Menos Vendidos CDK');
+  XLSX.writeFile(wb, `Menos_Vendidos_CurvaCDK_Acdelco_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportarPorCurva(){
+  const sel = document.getElementById('stock-curva-select').value;
+  const consolidado = consolidarPorItem(estoqueBaseParaExport());
+  const lista = (sel ? consolidado.filter(r=>(r.curva||'').toUpperCase()===sel) : consolidado.slice())
+    .sort((a,b)=>b.mediaMensal-a.mediaMensal);
+  const wb = XLSX.utils.book_new();
+  const nomeAba = (sel ? 'Curva '+sel : 'Todas as Curvas').slice(0,31);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCatalogoComM(lista)), nomeAba);
+  const sufixo = sel ? 'Curva_'+sel : 'Todas_Curvas';
+  XLSX.writeFile(wb, `${sufixo}_Acdelco_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportarEstoque(){
+  const data = estoqueFiltrado();
+  const consolidado = consolidarPorItem(data);
+  const wb = XLSX.utils.book_new();
+
+  const valorTotal = consolidado.reduce((s,r)=>s+r.valorEstoque,0);
+  const semGiro = consolidado.filter(r=>r.mediaMensal<=0);
+  const resumo = [
+    ['Estoque & Catálogo Acdelco — Grupo Jorlan'],
+    ['Relatório gerado em', new Date().toLocaleString('pt-BR')],
+    [],
+    ['Itens em estoque (códigos distintos)', consolidado.length],
+    ['Valor total em estoque', valorTotal],
+    ['Quantidade total de peças', consolidado.reduce((s,r)=>s+r.qtde,0)],
+    ['Itens sem giro (6 meses)', semGiro.length],
+    ['Valor parado em estoque', semGiro.reduce((s,r)=>s+r.valorEstoque,0)]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumo), 'Resumo');
+
+  // Por empresa/loja (com linha Consolidado) — usa dados por empresa (não consolidados)
+  const porEmpMap = new Map();
+  data.forEach(r=>{
+    const key = r.empresa || 'Sem código';
+    if(!porEmpMap.has(key)) porEmpMap.set(key, {n:0, qtde:0, valor:0, semGiro:0, valorParado:0});
+    const o = porEmpMap.get(key);
+    o.n++; o.qtde+=r.qtde; o.valor+=r.valorEstoque;
+    if(r.mediaMensal<=0){ o.semGiro++; o.valorParado+=r.valorEstoque; }
+  });
+  const linhasEmp = [['Empresa','Itens (SKUs)','Quantidade','Valor em estoque','Itens sem giro','Valor parado']];
+  const totalEmp = {n:0, qtde:0, valor:0, semGiro:0, valorParado:0};
+  Array.from(porEmpMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([e,o])=>{
+    totalEmp.n+=o.n; totalEmp.qtde+=o.qtde; totalEmp.valor+=o.valor; totalEmp.semGiro+=o.semGiro; totalEmp.valorParado+=o.valorParado;
+    linhasEmp.push(['Empresa '+e, o.n, o.qtde, o.valor, o.semGiro, o.valorParado]);
+  });
+  linhasEmp.push(['Consolidado', totalEmp.n, totalEmp.qtde, totalEmp.valor, totalEmp.semGiro, totalEmp.valorParado]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasEmp), 'Por Empresa');
+
+  // Por praça (com linha Consolidado) — usa dados por empresa (não consolidados)
+  const porPracaMapEst = new Map();
+  data.forEach(r=>{
+    const key = r.praca || 'Não classificado';
+    if(!porPracaMapEst.has(key)) porPracaMapEst.set(key, {n:0, qtde:0, valor:0, semGiro:0, valorParado:0});
+    const o = porPracaMapEst.get(key);
+    o.n++; o.qtde+=r.qtde; o.valor+=r.valorEstoque;
+    if(r.mediaMensal<=0){ o.semGiro++; o.valorParado+=r.valorEstoque; }
+  });
+  const linhasPracaEst = [['Praça','Itens (SKUs)','Quantidade','Valor em estoque','Itens sem giro','Valor parado']];
+  const totalPracaEst = {n:0, qtde:0, valor:0, semGiro:0, valorParado:0};
+  Array.from(porPracaMapEst.entries()).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([p,o])=>{
+    totalPracaEst.n+=o.n; totalPracaEst.qtde+=o.qtde; totalPracaEst.valor+=o.valor; totalPracaEst.semGiro+=o.semGiro; totalPracaEst.valorParado+=o.valorParado;
+    linhasPracaEst.push([p, o.n, o.qtde, o.valor, o.semGiro, o.valorParado]);
+  });
+  linhasPracaEst.push(['Consolidado', totalPracaEst.n, totalPracaEst.qtde, totalPracaEst.valor, totalPracaEst.semGiro, totalPracaEst.valorParado]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasPracaEst), 'Por Praça');
+
+  // Por modalidade (consolidado por item)
+  const porMod = new Map();
+  consolidado.forEach(r=>{
+    if(!porMod.has(r.modalidade)) porMod.set(r.modalidade, {valor:0, qtde:0, n:0});
+    const o = porMod.get(r.modalidade); o.valor+=r.valorEstoque; o.qtde+=r.qtde; o.n++;
+  });
+  const linhasMod = [['Modalidade','Nº de itens','Quantidade','Valor em estoque']];
+  Array.from(porMod.entries()).sort((a,b)=>b[1].valor-a[1].valor).forEach(([m,o])=> linhasMod.push([m,o.n,o.qtde,o.valor]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasMod), 'Por Modalidade');
+
+  // Mais vendidos (top 100, consolidado, com M1-M6)
+  const maisVendidos = consolidado.filter(r=>r.mediaMensal>0).sort((a,b)=>b.mediaMensal-a.mediaMensal).slice(0,100);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCatalogoComM(maisVendidos)), 'Mais Vendidos Top100');
+
+  // Menos vendidos (curva C/D/K, consolidado, com M1-M6)
+  const menosVendidos = consolidado.filter(r=>['C','D','K'].includes((r.curva||'').toUpperCase())).sort((a,b)=>a.mediaMensal-b.mediaMensal);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCatalogoComM(menosVendidos)), 'Menos Vendidos CDK');
+
+  // Catálogo completo (para vendedores) — consolidado por item, agrupado por modalidade/linha
+  const catalogo = consolidado.slice().sort((a,b)=>{
+    if(a.modalidade!==b.modalidade) return a.modalidade.localeCompare(b.modalidade);
+    if(a.linha!==b.linha) return a.linha.localeCompare(b.linha);
+    return a.descricao.localeCompare(b.descricao);
+  });
+  const linhasCat = [['Modalidade','Linha','Código','Descrição','Aplicação','Curva','Estoque','Preço de venda']];
+  catalogo.forEach(r=> linhasCat.push([r.modalidade, r.linha, r.codItem, r.descricao, r.aplicacao, r.curva, r.qtde, r.precoVenda]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasCat), 'Catalogo Vendedores');
+
+  // Estoque completo (analítico, por empresa/localização — com M1-M6)
+  const linhasFull = [['Código','Descrição','Aplicação','Linha','Modalidade','Curva','Estoque','Custo unit.','Valor em estoque','Preço venda','Média/mês','M1','M2','M3','M4','M5','M6','Última venda','Última compra','Empresa','Praça','Localização']];
+  data.forEach(r=> linhasFull.push([r.codItem, r.descricao, r.aplicacao, r.linha, r.modalidade, r.curva, r.qtde, r.custoUnit, r.valorEstoque, r.precoVenda, r.mediaMensal, r.m[0], r.m[1], r.m[2], r.m[3], r.m[4], r.m[5], r.ultimaVenda?fmtData(r.ultimaVenda):'', r.ultimaCompra?fmtData(r.ultimaCompra):'', r.empresa, r.praca, r.locacao]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(linhasFull), 'Estoque Completo');
+
+  const dataStr = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Catalogo_Estoque_Acdelco_${dataStr}.xlsx`);
+}
+
+/* ============================================================
+   APRESENTAÇÃO GERAL (PDF) — VENDAS + ESTOQUE
+============================================================ */
+const PDF_NAVY = '#0B1642';
+const PDF_NAVY2 = '#142255';
+const PDF_GOLD = '#C9972E';
+const PDF_TEXT = '#1B2140';
+const PDF_MUTED = '#676E88';
+const PDF_BORDER = '#E6E8F1';
+const PDF_INDIGO = '#4F5FDE';
+const PDF_TEAL = '#0E9488';
+const PDF_MOD_COLOR = { 'Chevrolet':'#1D4E9B', 'Multimarca':'#C9972E', 'Químicos':'#0E9488', 'Não classificado':'#6B7280' };
+function corModHex(m){ return PDF_MOD_COLOR[m] || '#8B90A8'; }
+const PDF_CURVA_COLOR = { A:'#1E7A3D', B:'#C9972E', C:'#D97B1F', D:'#B03A2E', K:'#7A1F1F' };
+const PDF_SLIDE_W = 1280, PDF_SLIDE_H = 720;
+
+document.getElementById('btn-apresentacao').addEventListener('click', gerarApresentacaoPDF);
+
+function pdfHeaderHTML(titulo, subtitulo){
+  return `
+    <div style="background:${PDF_NAVY};height:96px;position:relative;">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:${PDF_GOLD};"></div>
+      <div style="padding:20px 40px 0;">
+        <div style="color:#fff;font-size:28px;font-weight:800;font-family:Arial,sans-serif;">${titulo}</div>
+        ${subtitulo ? `<div style="color:${PDF_GOLD};font-size:14px;font-weight:700;margin-top:4px;font-family:Arial,sans-serif;">${subtitulo}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function pdfFooterHTML(){
+  return `<div style="position:absolute;bottom:16px;left:40px;font-size:11px;color:${PDF_MUTED};font-family:Arial,sans-serif;">Painel Acdelco · Central de Compras · Grupo Jorlan</div>`;
+}
+
+function pdfKpiRowHTML(kpis){
+  const n = kpis.length, gap = 18, totalW = PDF_SLIDE_W - 80, w = (totalW - gap*(n-1))/n;
+  const cards = kpis.map(k=>`
+    <div style="width:${w}px;background:#fff;border:1px solid ${PDF_BORDER};border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;box-sizing:border-box;">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:5px;background:${k.cor||PDF_GOLD};"></div>
+      <div style="font-size:11px;font-weight:700;color:${PDF_MUTED};text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-family:Arial,sans-serif;">${k.label}</div>
+      <div style="font-size:25px;font-weight:800;color:${PDF_NAVY};font-family:Arial,sans-serif;">${k.value}</div>
+    </div>`).join('');
+  return `<div style="display:flex;gap:${gap}px;padding:0 40px;margin-top:24px;">${cards}</div>`;
+}
+
+function pdfTableHTML(headers, rows, rightCols){
+  rightCols = rightCols || [];
+  const th = headers.map((h,i)=>`<th style="text-align:${rightCols.includes(i)?'right':'left'};padding:9px 12px;background:${PDF_NAVY};color:#fff;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-family:Arial,sans-serif;">${h}</th>`).join('');
+  const trs = rows.map((r,ri)=>`<tr style="background:${ri%2? '#FAFAFE':'#fff'};">${r.map((c,i)=>`<td style="padding:8px 12px;border-bottom:1px solid ${PDF_BORDER};font-size:13px;color:${PDF_TEXT};text-align:${rightCols.includes(i)?'right':'left'};font-family:Arial,sans-serif;">${c}</td>`).join('')}</tr>`).join('');
+  return `<table style="width:100%;border-collapse:collapse;">${`<thead><tr>${th}</tr></thead>`}<tbody>${trs}</tbody></table>`;
+}
+
+async function gerarApresentacaoPDF(){
+  if(!RAW.length && !STOCK_RAW.length){
+    alert('Carregue ao menos os dados de Vendas ou de Estoque antes de gerar a apresentação.');
+    return;
+  }
+  const btn = document.getElementById('btn-apresentacao');
+  const label = document.getElementById('btn-apresentacao-label');
+  const textoOriginal = label.textContent;
+  btn.disabled = true;
+  label.textContent = 'Gerando…';
+
+  const host = document.createElement('div');
+  host.style.cssText = `position:fixed;left:-10000px;top:0;width:${PDF_SLIDE_W}px;background:#fff;`;
+  document.body.appendChild(host);
+  const chartInstances = [];
+
+  try{
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'landscape', unit:'px', format:[PDF_SLIDE_W, PDF_SLIDE_H], compress:true });
+    let primeira = true;
+
+    async function addSlide(html, montarGraficos){
+      const el = document.createElement('div');
+      el.style.cssText = `width:${PDF_SLIDE_W}px;height:${PDF_SLIDE_H}px;position:relative;background:#fff;font-family:Arial,sans-serif;overflow:hidden;`;
+      el.innerHTML = html;
+      host.innerHTML = '';
+      host.appendChild(el);
+      if(montarGraficos){
+        const novos = montarGraficos(el) || [];
+        chartInstances.push(...novos);
+        await new Promise(r=>setTimeout(r, 120));
+      } else {
+        await new Promise(r=>setTimeout(r, 30));
+      }
+      const canvas = await html2canvas(el, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false });
+      const img = canvas.toDataURL('image/jpeg', 0.93);
+      if(!primeira) pdf.addPage([PDF_SLIDE_W, PDF_SLIDE_H], 'landscape');
+      pdf.addImage(img, 'JPEG', 0, 0, PDF_SLIDE_W, PDF_SLIDE_H);
+      primeira = false;
+      chartInstances.forEach(c=>{ try{ c.destroy(); }catch(e){} });
+      chartInstances.length = 0;
+    }
+
+    // ---------- Capa ----------
+    await addSlide(`
+      <div style="width:${PDF_SLIDE_W}px;height:${PDF_SLIDE_H}px;background:linear-gradient(135deg, ${PDF_NAVY}, ${PDF_NAVY2});position:relative;box-sizing:border-box;">
+        <div style="position:absolute;left:60px;top:255px;width:110px;height:5px;background:${PDF_GOLD};"></div>
+        <div style="position:absolute;left:60px;top:270px;color:${PDF_GOLD};font-size:15px;font-weight:800;letter-spacing:2px;font-family:Arial,sans-serif;">CENTRAL DE COMPRAS · GRUPO JORLAN</div>
+        <div style="position:absolute;left:60px;top:300px;color:#fff;font-size:52px;font-weight:800;font-family:Arial,sans-serif;">Painel Acdelco</div>
+        <div style="position:absolute;left:60px;top:378px;color:#AEB4D6;font-size:20px;font-family:Arial,sans-serif;">Relatório Geral — Vendas &amp; Estoque</div>
+        <div style="position:absolute;left:60px;bottom:40px;color:#9AA1C7;font-size:13px;font-family:Arial,sans-serif;">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+      </div>`);
+
+    // ================= VENDAS =================
+    if(RAW.length){
+      const data = dadosFiltrados();
+      const meses = mesesDisponiveis().filter(m=>FILTROS.meses.has(m));
+      const fat = data.reduce((s,r)=>s+r.valor,0);
+      const qtd = data.reduce((s,r)=>s+r.quantidade,0);
+      const n = data.length;
+      const ticket = n ? fat/n : 0;
+      const periodoTxt = meses.length ? (mesLabel(meses[0])+' a '+mesLabel(meses[meses.length-1])) : '—';
+      const porMes = agregarPorMes(data);
+
+      // ---- Slide: Visão geral ----
+      await addSlide(
+        pdfHeaderHTML('Vendas — Visão Geral', 'Período: '+periodoTxt+' · Itens Acdelco') +
+        pdfKpiRowHTML([
+          { label:'Faturamento total', value: fmtBRLCent(fat), cor:PDF_NAVY },
+          { label:'Quantidade vendida', value: fmtNum(qtd)+' un.', cor:PDF_GOLD },
+          { label:'Nº de vendas', value: fmtNum(n), cor:PDF_TEAL },
+          { label:'Ticket médio', value: fmtBRLCent(ticket), cor:PDF_INDIGO }
+        ]) +
+        (meses.length ? `
+          <div style="padding:0 40px;margin-top:28px;">
+            <div style="font-size:14px;font-weight:800;color:${PDF_NAVY};margin-bottom:10px;font-family:Arial,sans-serif;">Evolução mensal do faturamento</div>
+            <div style="width:${PDF_SLIDE_W-80}px;height:330px;"><canvas id="pdfChartMensal" width="${PDF_SLIDE_W-80}" height="330"></canvas></div>
+          </div>` : '') +
+        pdfFooterHTML(),
+        (el)=>{
+          if(!meses.length) return [];
+          const ctx = el.querySelector('#pdfChartMensal');
+          const c = new Chart(ctx, {
+            type:'bar',
+            data:{ labels: meses.map(mesLabel), datasets:[{ data: meses.map(m=> porMes.has(m)? porMes.get(m).fat : 0), backgroundColor: PDF_INDIGO, borderRadius:6 }] },
+            options:{ responsive:false, animation:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>fmtBRL(v), font:{size:12} } }, x:{ ticks:{font:{size:12}} } } }
+          });
+          return [c];
+        }
+      );
+
+      // ---- Slide: projeção de fechamento do mês em andamento ----
+      const proj = calcularProjecao();
+      if(proj){
+        const kpisProj = [
+          { l:'Faturado até agora', v: fmtBRLCent(proj.fatAtual) },
+          { l:'Dias com venda', v: proj.diasComVenda+' de '+proj.ultimoDia+' dias corridos' },
+          { l:'Média por dia de venda', v: fmtBRLCent(proj.mediaDiaria) },
+          { l:'Dias restantes no mês', v: proj.diasRestantes+' de '+proj.diasTotaisMes+' dias' }
+        ];
+        await addSlide(
+          pdfHeaderHTML('Vendas — Projeção de Fechamento do Mês', 'Mês em andamento: '+mesLabel(proj.mesAtualKey)) +
+          `<div style="padding:32px 40px 0;">
+            <div style="background:linear-gradient(120deg, ${PDF_NAVY}, ${PDF_NAVY2});border-radius:14px;padding:28px 32px;box-sizing:border-box;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                  <div style="color:${PDF_GOLD};font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-family:Arial,sans-serif;">Tendência do mês em andamento</div>
+                  <div style="color:#fff;font-size:20px;font-weight:800;margin-top:4px;font-family:Arial,sans-serif;">${mesLabel(proj.mesAtualKey)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="color:#AEB4D6;font-size:12px;font-weight:700;text-transform:uppercase;font-family:Arial,sans-serif;">Projeção de fechamento</div>
+                  <div style="color:${PDF_GOLD};font-size:38px;font-weight:900;font-family:Arial,sans-serif;">${fmtBRLCent(proj.projecaoTotal)}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-top:26px;">
+                ${kpisProj.map(k=>`
+                  <div style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;box-sizing:border-box;">
+                    <div style="font-size:10.5px;color:#AEB4D6;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-family:Arial,sans-serif;">${k.l}</div>
+                    <div style="font-size:17px;font-weight:800;color:#fff;font-family:Arial,sans-serif;">${k.v}</div>
+                  </div>`).join('')}
+              </div>
+              <div style="height:8px;border-radius:6px;background:rgba(255,255,255,.12);margin-top:22px;overflow:hidden;">
+                <div style="height:100%;border-radius:6px;background:linear-gradient(90deg, ${PDF_GOLD}, #E8C05F);width:${Math.min(100, proj.ultimoDia/proj.diasTotaisMes*100).toFixed(1)}%;"></div>
+              </div>
+              ${proj.porModalidade.length ? `
+              <div style="display:flex;gap:14px;margin-top:22px;">
+                ${proj.porModalidade.map(m=>`
+                  <div style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;box-sizing:border-box;">
+                    <div style="font-size:10.5px;color:#AEB4D6;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:Arial,sans-serif;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${corModHex(m.modalidade)};margin-right:6px;"></span>${m.modalidade}</div>
+                    <div style="font-size:17px;font-weight:800;color:#fff;margin-top:4px;font-family:Arial,sans-serif;">${fmtBRLCent(m.projecaoTotal)}</div>
+                    <div style="font-size:11px;color:#9AA1C7;font-family:Arial,sans-serif;">${fmtBRLCent(m.fatAtual)} até agora</div>
+                  </div>`).join('')}
+              </div>` : ''}
+              <div style="margin-top:16px;font-size:12.5px;color:#9AA1C7;line-height:1.5;font-family:Arial,sans-serif;">Estimativa com base no ritmo médio de vendas dos dias em que houve movimento no mês, projetado para os dias restantes até o fechamento. Não considera sazonalidade, feriados ou campanhas pontuais — use como referência, não como meta fechada.</div>
+            </div>
+          </div>` + pdfFooterHTML()
+        );
+      }
+
+      // ---- Slide: modalidade + linhas ----
+      const porMod = agregarPorModalidade(data);
+      const linhasProd = agregarPorLinha(data).sort((a,b)=>b.fat-a.fat).slice(0,10);
+      const modLabels = Array.from(porMod.keys());
+      if(modLabels.length || linhasProd.length){
+        await addSlide(
+          pdfHeaderHTML('Vendas — Modalidade e Linhas de Produto', periodoTxt) +
+          `<div style="display:flex;gap:24px;padding:24px 40px 0;">
+            <div style="width:520px;">
+              <div style="font-size:13px;font-weight:800;color:${PDF_NAVY};margin-bottom:8px;font-family:Arial,sans-serif;">Faturamento por modalidade</div>
+              ${modLabels.length ? `<div style="width:520px;height:340px;"><canvas id="pdfChartModVendas" width="520" height="340"></canvas></div>` : ''}
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;color:${PDF_NAVY};margin-bottom:8px;font-family:Arial,sans-serif;">Top 10 linhas de produto</div>
+              ${pdfTableHTML(['Linha','Modalidade','Faturamento'], linhasProd.map(l=>[l.linha, l.modalidade, fmtBRLCent(l.fat)]), [2])}
+            </div>
+          </div>` + pdfFooterHTML(),
+          (el)=>{
+            if(!modLabels.length) return [];
+            const ctx = el.querySelector('#pdfChartModVendas');
+            const c = new Chart(ctx, {
+              type:'pie',
+              data:{ labels: modLabels, datasets:[{ data: modLabels.map(l=>porMod.get(l).fat), backgroundColor: modLabels.map(corModHex), borderWidth:2, borderColor:'#fff' }] },
+              options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:12}} } } }
+            });
+            return [c];
+          }
+        );
+      }
+
+      // ---- Slide: valor de vendas por modalidade (Chevrolet / Multimarca / Químicos) ----
+      if(modLabels.length){
+        const fatModTotal = modLabels.reduce((s,l)=>s+porMod.get(l).fat,0);
+        const ordemModVendas = ['Chevrolet','Multimarca','Químicos'].filter(m=>porMod.has(m))
+          .concat(modLabels.filter(m=>!['Chevrolet','Multimarca','Químicos'].includes(m)));
+        const linhasModVendas = ordemModVendas.map(m=>{
+          const o = porMod.get(m);
+          const pct = fatModTotal ? (o.fat/fatModTotal*100) : 0;
+          return [
+            `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${corModHex(m)};margin-right:8px;vertical-align:middle;"></span>${m}`,
+            fmtNum(o.n),
+            fmtNum(o.qtd)+' un.',
+            fmtBRLCent(o.fat),
+            fmtPct(pct)
+          ];
+        });
+        linhasModVendas.push([`<b>Consolidado</b>`, `<b>${fmtNum(n)}</b>`, `<b>${fmtNum(qtd)} un.</b>`, `<b>${fmtBRLCent(fat)}</b>`, `<b>100%</b>`]);
+        await addSlide(
+          pdfHeaderHTML('Vendas — Valor por Modalidade', 'Chevrolet · Multimarca · Químicos · '+periodoTxt) +
+          `<div style="padding:32px 40px 0;">${pdfTableHTML(['Modalidade','Nº de vendas','Quantidade','Faturamento','% do total'], linhasModVendas, [1,2,3,4])}</div>` +
+          `<div style="padding:0 40px;margin-top:24px;">
+            <div style="width:${PDF_SLIDE_W-80}px;height:230px;"><canvas id="pdfChartModVendasValor" width="${PDF_SLIDE_W-80}" height="230"></canvas></div>
+          </div>` + pdfFooterHTML(),
+          (el)=>{
+            const ctx = el.querySelector('#pdfChartModVendasValor');
+            const c = new Chart(ctx, {
+              type:'bar',
+              data:{ labels: ordemModVendas, datasets:[{ data: ordemModVendas.map(m=>porMod.get(m).fat), backgroundColor: ordemModVendas.map(corModHex), borderRadius:8, maxBarThickness:110 }] },
+              options:{ indexAxis:'y', responsive:false, animation:false, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ callback:v=>fmtBRL(v), font:{size:12} } }, y:{ ticks:{font:{size:13}} } } }
+            });
+            return [c];
+          }
+        );
+      }
+
+      // ---- Slide: por canal (mês a mês) ----
+      const grupCanalMes = new Map();
+      data.forEach(r=>{
+        if(!grupCanalMes.has(r.canal)) grupCanalMes.set(r.canal, {});
+        const o = grupCanalMes.get(r.canal);
+        o[r.mes] = (o[r.mes]||0) + r.valor;
+      });
+      if(grupCanalMes.size && meses.length){
+        const canaisOrdenados = Array.from(grupCanalMes.keys()).sort();
+        const linhasCanal = canaisOrdenados.map(canal=>{
+          const o = grupCanalMes.get(canal);
+          const totalCanal = meses.reduce((s,m)=>s+(o[m]||0),0);
+          return [canal, ...meses.map(m=>fmtBRLCent(o[m]||0)), `<b>${fmtBRLCent(totalCanal)}</b>`];
+        });
+        const totalGeral = meses.map(m=> canaisOrdenados.reduce((s,c)=> s+(grupCanalMes.get(c)[m]||0), 0));
+        const totalGeralSoma = totalGeral.reduce((a,b)=>a+b,0);
+        linhasCanal.push([`<b>Consolidado</b>`, ...totalGeral.map(v=>`<b>${fmtBRLCent(v)}</b>`), `<b>${fmtBRLCent(totalGeralSoma)}</b>`]);
+        const headersCanal = ['Canal', ...meses.map(mesLabel), 'Total '+mesLabel(meses[0])+'–'+mesLabel(meses[meses.length-1])];
+        const rightColsCanal = meses.map((m,i)=>i+1).concat([meses.length+1]);
+        await addSlide(
+          pdfHeaderHTML('Vendas — Segmentação por Canal', periodoTxt) +
+          `<div style="padding:28px 40px 0;">${pdfTableHTML(headersCanal, linhasCanal, rightColsCanal)}</div>` +
+          pdfFooterHTML()
+        );
+      }
+
+      // ---- Slide: por empresa ----
+      const grupEmp = new Map();
+      data.forEach(r=>{
+        const key = r.codEmpresa || 'Sem código';
+        if(!grupEmp.has(key)) grupEmp.set(key, {fat:0, qtd:0, n:0, praca: r.praca});
+        const o = grupEmp.get(key); o.fat+=r.valor; o.qtd+=r.quantidade; o.n++;
+      });
+      if(grupEmp.size){
+        const empresas = Array.from(grupEmp.keys()).sort();
+        const linhasTab = empresas.map(e=>{
+          const o = grupEmp.get(e);
+          return [o.praca||'—', 'Empresa '+e, fmtBRLCent(o.fat), fmtNum(o.qtd)+' un.', fmtNum(o.n), fmtBRLCent(o.n? o.fat/o.n:0)];
+        });
+        const totalE = {fat:0,qtd:0,n:0};
+        empresas.forEach(e=>{ const o=grupEmp.get(e); totalE.fat+=o.fat; totalE.qtd+=o.qtd; totalE.n+=o.n; });
+        linhasTab.push([``, `<b>Consolidado</b>`, `<b>${fmtBRLCent(totalE.fat)}</b>`, `<b>${fmtNum(totalE.qtd)} un.</b>`, `<b>${fmtNum(totalE.n)}</b>`, `<b>${fmtBRLCent(totalE.n? totalE.fat/totalE.n:0)}</b>`]);
+        await addSlide(
+          pdfHeaderHTML('Vendas — Por Empresa / Loja', periodoTxt) +
+          `<div style="padding:28px 40px 0;">${pdfTableHTML(['Praça','Empresa','Faturamento','Quantidade','Nº de vendas','Ticket médio'], linhasTab, [2,3,4,5])}</div>` +
+          pdfFooterHTML()
+        );
+      }
+    }
+
+    // ================= ESTOQUE =================
+    if(STOCK_RAW.length){
+      const dataEst = estoqueFiltrado();
+      const consolidado = consolidarPorItem(dataEst);
+      const valorTotal = consolidado.reduce((s,r)=>s+r.valorEstoque,0);
+      const qtdeTotal = consolidado.reduce((s,r)=>s+r.qtde,0);
+      const semGiro = consolidado.filter(r=>r.mediaMensal<=0);
+
+      const mapMod = new Map();
+      consolidado.forEach(r=>{ mapMod.set(r.modalidade, (mapMod.get(r.modalidade)||0)+r.valorEstoque); });
+      const modLabels2 = Array.from(mapMod.keys());
+      const mapCurva = new Map();
+      consolidado.forEach(r=>{ mapCurva.set(r.curva, (mapCurva.get(r.curva)||0)+1); });
+      const ordemCurva = ['A','B','C','D','K'].filter(c=>mapCurva.has(c));
+
+      await addSlide(
+        pdfHeaderHTML('Estoque — Visão Geral', 'Itens Acdelco cadastrados na Segmento Acdelco') +
+        pdfKpiRowHTML([
+          { label:'Itens em estoque', value: fmtNum(consolidado.length), cor:PDF_NAVY },
+          { label:'Valor total em estoque', value: fmtBRLCent(valorTotal), cor:PDF_GOLD },
+          { label:'Quantidade de peças', value: fmtNum(qtdeTotal)+' un.', cor:PDF_TEAL },
+          { label:'Itens sem giro (6m)', value: fmtNum(semGiro.length), cor:'#C0392B' }
+        ]) +
+        `<div style="display:flex;gap:24px;padding:24px 40px 0;">
+          <div style="width:560px;">
+            <div style="font-size:13px;font-weight:800;color:${PDF_NAVY};margin-bottom:8px;font-family:Arial,sans-serif;">Estoque (valor) por modalidade</div>
+            ${modLabels2.length ? `<div style="width:560px;height:290px;"><canvas id="pdfChartModEstoque" width="560" height="290"></canvas></div>` : ''}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:800;color:${PDF_NAVY};margin-bottom:8px;font-family:Arial,sans-serif;">Distribuição por curva ABC</div>
+            ${ordemCurva.length ? `<div style="width:100%;height:290px;"><canvas id="pdfChartCurva" width="580" height="290"></canvas></div>` : ''}
+          </div>
+        </div>` + pdfFooterHTML(),
+        (el)=>{
+          const insts = [];
+          if(modLabels2.length){
+            const ctx1 = el.querySelector('#pdfChartModEstoque');
+            insts.push(new Chart(ctx1, {
+              type:'pie',
+              data:{ labels: modLabels2, datasets:[{ data: modLabels2.map(l=>mapMod.get(l)), backgroundColor: modLabels2.map(corModHex), borderWidth:2, borderColor:'#fff' }] },
+              options:{ responsive:false, animation:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
+            }));
+          }
+          if(ordemCurva.length){
+            const ctx2 = el.querySelector('#pdfChartCurva');
+            insts.push(new Chart(ctx2, {
+              type:'bar',
+              data:{ labels: ordemCurva.map(c=>'Curva '+c), datasets:[{ data: ordemCurva.map(c=>mapCurva.get(c)), backgroundColor: ordemCurva.map(c=>PDF_CURVA_COLOR[c]||'#8B90A8'), borderRadius:6 }] },
+              options:{ responsive:false, animation:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{font:{size:12}} }, x:{ ticks:{font:{size:12}} } } }
+            }));
+          }
+          return insts;
+        }
+      );
+
+      // ---- Slide: valor de estoque por modalidade (Chevrolet / Multimarca / Químicos) ----
+      if(modLabels2.length){
+        const valorModTotal = modLabels2.reduce((s,l)=>s+mapMod.get(l),0);
+        const mapModQtdeItens = new Map();
+        const mapModQtdePecas = new Map();
+        consolidado.forEach(r=>{
+          mapModQtdeItens.set(r.modalidade, (mapModQtdeItens.get(r.modalidade)||0)+1);
+          mapModQtdePecas.set(r.modalidade, (mapModQtdePecas.get(r.modalidade)||0)+r.qtde);
+        });
+        const ordemMod = ['Chevrolet','Multimarca','Químicos'].filter(m=>mapMod.has(m))
+          .concat(modLabels2.filter(m=>!['Chevrolet','Multimarca','Químicos'].includes(m)));
+        const linhasMod = ordemMod.map(m=>{
+          const v = mapMod.get(m);
+          const pct = valorModTotal ? (v/valorModTotal*100) : 0;
+          return [
+            `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${corModHex(m)};margin-right:8px;vertical-align:middle;"></span>${m}`,
+            fmtNum(mapModQtdeItens.get(m)),
+            fmtNum(mapModQtdePecas.get(m))+' un.',
+            fmtBRLCent(v),
+            fmtPct(pct)
+          ];
+        });
+        linhasMod.push([`<b>Consolidado</b>`, `<b>${fmtNum(consolidado.length)}</b>`, `<b>${fmtNum(qtdeTotal)} un.</b>`, `<b>${fmtBRLCent(valorModTotal)}</b>`, `<b>100%</b>`]);
+        await addSlide(
+          pdfHeaderHTML('Estoque — Valor por Modalidade', 'Chevrolet · Multimarca · Químicos') +
+          `<div style="padding:32px 40px 0;">${pdfTableHTML(['Modalidade','Itens (SKUs)','Quantidade','Valor em estoque','% do total'], linhasMod, [1,2,3,4])}</div>` +
+          `<div style="padding:0 40px;margin-top:24px;">
+            <div style="width:${PDF_SLIDE_W-80}px;height:230px;"><canvas id="pdfChartModValor" width="${PDF_SLIDE_W-80}" height="230"></canvas></div>
+          </div>` + pdfFooterHTML(),
+          (el)=>{
+            const ctx = el.querySelector('#pdfChartModValor');
+            const c = new Chart(ctx, {
+              type:'bar',
+              data:{ labels: ordemMod, datasets:[{ data: ordemMod.map(m=>mapMod.get(m)), backgroundColor: ordemMod.map(corModHex), borderRadius:8, maxBarThickness:110 }] },
+              options:{ indexAxis:'y', responsive:false, animation:false, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ callback:v=>fmtBRL(v), font:{size:12} } }, y:{ ticks:{font:{size:13}} } } }
+            });
+            return [c];
+          }
+        );
+      }
+
+      // ---- Slide: valor de estoque por giro (curva A/B vs C/D/K) ----
+      const grupoAlto = consolidado.filter(r=>['A','B'].includes((r.curva||'').toUpperCase()));
+      const grupoBaixo = consolidado.filter(r=>['C','D','K'].includes((r.curva||'').toUpperCase()));
+      const valorAlto = grupoAlto.reduce((s,r)=>s+r.valorEstoque,0);
+      const valorBaixo = grupoBaixo.reduce((s,r)=>s+r.valorEstoque,0);
+      const valorGiroTotal = valorAlto + valorBaixo;
+      const pctAlto = valorGiroTotal ? (valorAlto/valorGiroTotal*100) : 0;
+      const pctBaixo = valorGiroTotal ? (valorBaixo/valorGiroTotal*100) : 0;
+      if(grupoAlto.length || grupoBaixo.length){
+        await addSlide(
+          pdfHeaderHTML('Estoque — Valor por Giro (Curva ABC)', 'Alto giro (curva A/B) vs. baixo giro (curva C/D/K)') +
+          `<div style="display:flex;gap:24px;padding:28px 40px 0;">
+            <div style="flex:1;background:#E5F4E9;border:1px solid #BFE3C9;border-radius:12px;padding:22px 26px;">
+              <div style="font-size:12px;font-weight:800;color:#1E7A3D;text-transform:uppercase;letter-spacing:.05em;font-family:Arial,sans-serif;">Alto giro — Curva A e B</div>
+              <div style="font-size:34px;font-weight:800;color:${PDF_NAVY};margin-top:10px;font-family:Arial,sans-serif;">${fmtBRLCent(valorAlto)}</div>
+              <div style="font-size:13px;color:#1E7A3D;margin-top:6px;font-family:Arial,sans-serif;">${fmtNum(grupoAlto.length)} itens · ${fmtPct(pctAlto)} do valor em giro classificado</div>
+            </div>
+            <div style="flex:1;background:#FBE7E5;border:1px solid #F0C4BE;border-radius:12px;padding:22px 26px;">
+              <div style="font-size:12px;font-weight:800;color:#B03A2E;text-transform:uppercase;letter-spacing:.05em;font-family:Arial,sans-serif;">Baixo giro — Curva C, D e K</div>
+              <div style="font-size:34px;font-weight:800;color:${PDF_NAVY};margin-top:10px;font-family:Arial,sans-serif;">${fmtBRLCent(valorBaixo)}</div>
+              <div style="font-size:13px;color:#B03A2E;margin-top:6px;font-family:Arial,sans-serif;">${fmtNum(grupoBaixo.length)} itens · ${fmtPct(pctBaixo)} do valor em giro classificado</div>
+            </div>
+          </div>
+          <div style="padding:28px 40px 0;">
+            <div style="width:${PDF_SLIDE_W-80}px;height:260px;"><canvas id="pdfChartGiro" width="${PDF_SLIDE_W-80}" height="260"></canvas></div>
+          </div>` + pdfFooterHTML(),
+          (el)=>{
+            const ctx = el.querySelector('#pdfChartGiro');
+            const c = new Chart(ctx, {
+              type:'bar',
+              data:{
+                labels:['Alto giro (A/B)','Baixo giro (C/D/K)'],
+                datasets:[{ data:[valorAlto, valorBaixo], backgroundColor:['#1E7A3D','#B03A2E'], borderRadius:8, maxBarThickness:90 }]
+              },
+              options:{
+                indexAxis:'y', responsive:false, animation:false,
+                plugins:{ legend:{display:false} },
+                scales:{ x:{ ticks:{ callback:v=>fmtBRL(v), font:{size:12} } }, y:{ ticks:{font:{size:13}} } }
+              }
+            });
+            return [c];
+          }
+        );
+      }
+
+      // ---- Slide: por empresa/loja ----
+      const grupEmpEst = new Map();
+      dataEst.forEach(r=>{
+        const key = r.empresa || 'Sem código';
+        if(!grupEmpEst.has(key)) grupEmpEst.set(key, {n:0, qtde:0, valor:0, semGiro:0, praca: r.praca});
+        const o = grupEmpEst.get(key);
+        o.n++; o.qtde+=r.qtde; o.valor+=r.valorEstoque;
+        if(r.mediaMensal<=0) o.semGiro++;
+      });
+      if(grupEmpEst.size){
+        const empresasEst = Array.from(grupEmpEst.keys()).sort();
+        const linhasTabEst = empresasEst.map(e=>{
+          const o = grupEmpEst.get(e);
+          return [o.praca||'—', 'Empresa '+e, fmtNum(o.n), fmtNum(o.qtde)+' un.', fmtBRLCent(o.valor), fmtNum(o.semGiro)];
+        });
+        const totalEst = {n:0,qtde:0,valor:0,semGiro:0};
+        empresasEst.forEach(e=>{ const o=grupEmpEst.get(e); totalEst.n+=o.n; totalEst.qtde+=o.qtde; totalEst.valor+=o.valor; totalEst.semGiro+=o.semGiro; });
+        linhasTabEst.push([``, `<b>Consolidado</b>`, `<b>${fmtNum(totalEst.n)}</b>`, `<b>${fmtNum(totalEst.qtde)} un.</b>`, `<b>${fmtBRLCent(totalEst.valor)}</b>`, `<b>${fmtNum(totalEst.semGiro)}</b>`]);
+        await addSlide(
+          pdfHeaderHTML('Estoque — Por Empresa / Loja', '') +
+          `<div style="padding:28px 40px 0;">${pdfTableHTML(['Praça','Empresa','Itens (SKUs)','Quantidade','Valor em estoque','Sem giro'], linhasTabEst, [2,3,4,5])}</div>` +
+          pdfFooterHTML()
+        );
+      }
+    }
+
+    // ---------- Encerramento ----------
+    await addSlide(`
+      <div style="width:${PDF_SLIDE_W}px;height:${PDF_SLIDE_H}px;background:${PDF_NAVY};position:relative;box-sizing:border-box;">
+        <div style="position:absolute;left:60px;top:335px;width:110px;height:5px;background:${PDF_GOLD};"></div>
+        <div style="position:absolute;left:60px;top:352px;color:#fff;font-size:26px;font-weight:800;font-family:Arial,sans-serif;">Painel Acdelco</div>
+        <div style="position:absolute;left:60px;top:406px;color:#AEB4D6;font-size:14px;font-family:Arial,sans-serif;">Central de Compras · Grupo Jorlan</div>
+      </div>`);
+
+    pdf.save(`Apresentacao_Acdelco_${new Date().toISOString().slice(0,10)}.pdf`);
+  } catch(err){
+    console.error(err);
+    alert('Não foi possível gerar a apresentação: ' + err.message);
+  } finally {
+    document.body.removeChild(host);
+    btn.disabled = false;
+    label.textContent = textoOriginal;
+  }
+}
+
+</script>
+</body>
+</html>
