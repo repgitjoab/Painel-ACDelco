@@ -1393,6 +1393,7 @@ function calcularProjecao(){
     FILTROS.modalidades.has(r.modalidade) &&
     FILTROS.canais.has(r.canal) &&
     FILTROS.regioes.has(r.regiao) &&
+    FILTROS.pracas.has(r.praca) &&
     (!FILTROS.buscaLinha || norm(r.linha).includes(FILTROS.buscaLinha))
   );
   if(!rowsMes.length) return null;
