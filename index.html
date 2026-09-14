@@ -65,6 +65,13 @@
   #file-input{display:none;}
   .upload-status{margin-top:18px;color:#DADFFF;font-size:13px;display:none;align-items:center;gap:8px;}
   .upload-error{margin-top:14px;color:#FFB4A8;font-size:13px;background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.35);padding:10px 14px;border-radius:10px;display:none;}
+  .connecting-box{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:44px 24px;border:1.5px dashed rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.02);
+  }
+  .spinner-lg{width:30px;height:30px;border-width:3px;margin-bottom:18px;}
+  .connecting-text{color:#fff;font-weight:700;font-size:15px;}
+  .connecting-sub{color:#9198C2;font-size:12.5px;margin-top:6px;}
   .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--gold);animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -129,6 +136,8 @@
   .search-input:focus{border-color:var(--indigo);}
   .filters-clear{align-self:flex-end;margin-left:auto;}
   .link-btn{background:none;border:none;color:var(--indigo);font-size:12.5px;font-weight:600;cursor:pointer;padding:6px 4px;}
+  #upload-connecting .link-btn{color:var(--gold);}
+  #upload-connecting .link-btn:hover{color:#DBA93C;}
   .link-btn:hover{text-decoration:underline;}
 
   /* KPI cards */
@@ -286,23 +295,38 @@
   <div class="upload-box">
     <p class="upload-eyebrow">Central de Compras · Grupo Jorlan</p>
     <h1 class="upload-title">Painel Acdelco</h1>
-    <p class="upload-sub">Acompanhamento mensal das vendas da linha Acdelco, segmentado por modalidade e linha de produto. Carregue a planilha-base para gerar o painel.</p>
 
-    <div class="dropzone" id="dropzone">
-      <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V4m0 0L7 9m5-5l5 5M4 17.5v1a2 2 0 002 2h12a2 2 0 002-2v-1"/></svg>
-      <div class="dropzone-title">Arraste o arquivo .xlsx aqui</div>
-      <div class="dropzone-sub">ou clique para selecionar — ex.: Painel_Acdelco.xlsx</div>
-    </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls">
-
-    <div class="upload-specs">
-      <div class="spec-chip"><div class="n">ABA VENDEDORES</div><div class="d">Usuário, nome, canal e loja</div></div>
-      <div class="spec-chip"><div class="n">ABA SEGMENTO</div><div class="d">Código, linha e modalidade Acdelco</div></div>
-      <div class="spec-chip"><div class="n">ABA VENDAS</div><div class="d">Movimentação de vendas do período</div></div>
+    <!-- Estado: conectando à base de dados (Google Sheets) -->
+    <div id="upload-connecting" style="display:none;">
+      <p class="upload-sub">Acompanhamento mensal das vendas da linha Acdelco, segmentado por modalidade e linha de produto.</p>
+      <div class="connecting-box">
+        <div class="spinner spinner-lg"></div>
+        <div class="connecting-text" id="upload-connecting-text">Conectando à base de dados…</div>
+        <div class="connecting-sub">Isso pode levar alguns segundos na primeira vez.</div>
+      </div>
+      <button class="link-btn" id="link-manual-upload" style="margin-top:6px;">Prefiro enviar a planilha manualmente</button>
     </div>
 
-    <div class="upload-status" id="upload-status"><div class="spinner"></div><span id="upload-status-text">Processando planilha…</span></div>
-    <div class="upload-error" id="upload-error"></div>
+    <!-- Estado: upload manual -->
+    <div id="upload-manual-section" style="display:none;">
+      <p class="upload-sub">Carregue a planilha-base para gerar o painel.</p>
+
+      <div class="dropzone" id="dropzone">
+        <svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V4m0 0L7 9m5-5l5 5M4 17.5v1a2 2 0 002 2h12a2 2 0 002-2v-1"/></svg>
+        <div class="dropzone-title">Arraste o arquivo .xlsx aqui</div>
+        <div class="dropzone-sub">ou clique para selecionar — ex.: Painel_Acdelco.xlsx</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls">
+
+      <div class="upload-specs">
+        <div class="spec-chip"><div class="n">ABA VENDEDORES</div><div class="d">Usuário, nome, canal e loja</div></div>
+        <div class="spec-chip"><div class="n">ABA SEGMENTO</div><div class="d">Código, linha e modalidade Acdelco</div></div>
+        <div class="spec-chip"><div class="n">ABA VENDAS</div><div class="d">Movimentação de vendas do período</div></div>
+      </div>
+
+      <div class="upload-status" id="upload-status"><div class="spinner"></div><span id="upload-status-text">Processando planilha…</span></div>
+      <div class="upload-error" id="upload-error"></div>
+    </div>
   </div>
 </div>
 
@@ -922,7 +946,8 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrGm93e3naAh
 
 async function carregarDoGoogleSheets(mostrarErroSeFalhar){
   if(!GOOGLE_SCRIPT_URL){ return false; }
-  showStatus('Conectando à planilha do Google Sheets…');
+  const textoConectando = document.getElementById('upload-connecting-text');
+  if(textoConectando) textoConectando.textContent = 'Conectando à base de dados…';
   try{
     const resp = await fetch(GOOGLE_SCRIPT_URL + (GOOGLE_SCRIPT_URL.includes('?')?'&':'?') + 't=' + Date.now(), { cache:'no-store' });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -937,16 +962,31 @@ async function carregarDoGoogleSheets(mostrarErroSeFalhar){
   }catch(err){
     console.error('Falha ao carregar do Google Sheets:', err);
     if(mostrarErroSeFalhar){
-      showError('Não foi possível conectar à planilha do Google Sheets (' + err.message + '). Você pode enviar o arquivo manualmente abaixo, ou tentar novamente mais tarde.');
-    } else {
-      statusBox.style.display = 'none';
+      mostrarUploadManual('Não foi possível conectar à base de dados (' + err.message + '). Envie o arquivo manualmente abaixo, ou tente novamente mais tarde.');
     }
     return false;
   }
 }
 
-// tenta conectar automaticamente assim que a página abre
-carregarDoGoogleSheets(true);
+// troca a tela de "conectando" pela de upload manual — usada quando a conexão falha
+// ou quando a pessoa clica em "prefiro enviar manualmente"
+function mostrarUploadManual(mensagemErro){
+  const telaConectando = document.getElementById('upload-connecting');
+  const telaManual = document.getElementById('upload-manual-section');
+  if(telaConectando) telaConectando.style.display = 'none';
+  if(telaManual) telaManual.style.display = 'block';
+  if(mensagemErro) showError(mensagemErro);
+}
+document.getElementById('link-manual-upload').addEventListener('click', ()=> mostrarUploadManual());
+
+// decide a tela inicial: se há URL do Google Sheets configurada, mostra "conectando" e tenta
+// automaticamente; senão, vai direto para o upload manual
+if(GOOGLE_SCRIPT_URL){
+  document.getElementById('upload-connecting').style.display = 'block';
+  carregarDoGoogleSheets(true);
+} else {
+  document.getElementById('upload-manual-section').style.display = 'block';
+}
 
 function findSheet(wb, testFn){
   return wb.SheetNames.find(n => testFn(norm(n)));
@@ -1708,6 +1748,7 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
   document.getElementById('tela-upload').style.display='flex';
   fileInput.value='';
   statusBox.style.display='none'; errorBox.style.display='none';
+  mostrarUploadManual();
 });
 document.getElementById('btn-refresh-sheets').addEventListener('click', async ()=>{
   const btn = document.getElementById('btn-refresh-sheets');
